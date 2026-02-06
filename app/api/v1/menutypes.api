@@ -1,0 +1,77 @@
+syntax = "v1"
+
+info (
+    title: "HappyEat菜单服务APITypes"
+    description: "HappyEat菜单服务相关接口参数"
+    author: "Goxny"
+    version: "v1.0.0"
+)
+
+import "../base/menubase.api"
+
+
+
+type ListMenusReq {
+    Current uint64 `json:"current"`
+    PageSize uint64 `json:"pageSize"`
+    Name string `json:"name,optional"`
+    Category string `json:"category,optional"`
+ }
+ type ListMenusReply {
+    Menus []Menu `json:"menus"`
+    Total uint64 `json:"total"`
+ }
+
+ type GetMenuReq {
+    Id uint64 `json:"id"`
+ }
+ type GetMenuReply {
+    Menu Menu `json:"menu"`
+ }
+
+ type CreateMenuReq {
+    Menu Menu `json:"menu"`
+ }
+ type CreateMenuReply {}
+
+ type UpdateMenuReq {
+    Menu Menu `json:"menu"`
+ }
+ type UpdateMenuReply {}
+
+ type DeleteMenuReq {
+    Id uint64 `json:"id"`
+ }
+ type DeleteMenuReply {}
+
+ type ListMenusCategoriesReq {
+    Current uint64 `json:"current"`
+    PageSize uint64 `json:"pageSize"`
+    Name string `json:"name,optional"`
+ }
+ type ListMenusCategoriesReply {
+    Categories []MenuCategory `json:"categories"`
+    Total uint64 `json:"total"`
+ }
+
+ type GetMenuCategoryReq {
+    Id uint64 `json:"id"`
+ }
+ type GetMenuCategoryReply {
+    MenuCategory MenuCategory `json:"category"`
+ }
+
+ type CreateMenuCategoryReq {
+    MenuCategory MenuCategory `json:"category"`
+ }
+ type CreateMenuCategoryReply {}
+
+ type UpdateMenuCategoryReq {
+    MenuCategory MenuCategory `json:"category"`
+ }
+ type UpdateMenuCategoryReply {}
+
+ type DeleteMenuCategoryReq {
+    Id uint64 `json:"id"`
+ }
+ type DeleteMenuCategoryReply {}

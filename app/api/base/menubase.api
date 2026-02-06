@@ -1,0 +1,16 @@
+syntax = "v1"
+
+type Menu {
+    Id uint64   `json:"id"` // 菜单id
+    Name string  `json:"name"`  // 菜单名称
+    description string `json:"description"` // 菜单描述
+    Price float64 `json:"price"`    // 菜单价格
+    Category string `json:"category"`   // 菜单分类
+    Create_at int64 `json:"create_at"`      // 创建时间
+}
+
+type MenuCategory {
+    Id uint64 `json:"id"`
+    Name string `json:"name"`
+    Description string `json:"description"`
+}

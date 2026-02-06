@@ -1,60 +1,67 @@
 syntax = "v1"
 
 info (
-    title: "HappyEat菜单服务API"
-    description: "HappyEat菜单服务相关接口"
-    author: "Goxny"
-    version: "v1.0.0"
+	title:       "HappyEat菜单服务API"
+	description: "HappyEat菜单服务相关接口"
+	author:      "Goxny"
+	version:     "v1.0.0"
 )
 
-import "menu_types.proto"
+import "menutypes.api"
 
 @server (
-    jwt: Auth
-    prefix: /central/v1
-    group: menu
-    timeout: 5s
+	jwt:     Auth
+	prefix:  /central/v1
+	group:   menu
+	timeout: 5s
 )
+service MenuService {
+	@doc "列出菜单"
+	@handler ListMenus
+	get /menus (ListMenusReq) returns (ListMenusReply)
 
-service MenuService { 
-    @doc "列出菜单"
-    @handler ListMenus
-    get /menus (ListMenusReq) returns (ListMenusReply)
-    
-    @doc "获取菜单"
-    @handler GetMenu
-    get /menus/{id} (GetMenuReq) returns (GetMenuReply)
+	@doc "获取菜单"
+	@handler GetMenu
+	get /menus/:id (GetMenuReq) returns (GetMenuReply)
 
-    @doc "创建菜单"
-    @handler CreateMenu
-    post /menus (CreateMenuReq) returns (CreateMenuReply)
+	@doc "创建菜单"
+	@handler CreateMenu
+	post /menus (CreateMenuReq) returns (CreateMenuReply)
 
-    @doc "更新菜单"
-    @handler UpdateMenu
-    put /menus/{id} (UpdateMenuReq) returns (UpdateMenuReply)
+	@doc "更新菜单"
+	@handler UpdateMenu
+	put /menus/:id (UpdateMenuReq) returns (UpdateMenuReply)
 
-    @doc "删除菜单"
-    @handler DeleteMenu
-    delete /menus/{id} (DeleteMenuReq) returns (DeleteMenuReply)
-
-    @doc "列出菜单类型"
-    @handler ListMenuTypes
-    get /menu-types (ListMenuTypesReq) returns (ListMenuTypesReply)
-    
-    @doc "获取菜单类型"
-    @handler GetMenuType
-    get /menu-types/{id} (GetMenuTypeReq) returns (GetMenuTypeReply)
-
-    @doc "创建菜单类型"
-    @handler CreateMenuType
-    post /menu-types (CreateMenuTypeReq) returns (CreateMenuTypeReply)
-    
-    @doc "更新菜单类型"
-    @handler UpdateMenuType
-    put /menu-types/{id} (UpdateMenuTypeReq) returns (UpdateMenuTypeReply)
-    
-    @doc "删除菜单类型"
-    @handler DeleteMenuType
-    delete /menu-types/{id} (DeleteMenuTypeReq) returns (DeleteMenuTypeReply)
-
+	@doc "删除菜单"
+	@handler DeleteMenu
+	delete /menus/:id (DeleteMenuReq) returns (DeleteMenuReply)
 }
+
+@server (
+	jwt:     Auth
+	prefix:  /central/v1
+	group:   menutype
+	timeout: 5s
+)
+service MenuService {
+	@doc "列出菜单种类"
+	@handler ListMenusCategories
+	get /menu/categories (ListMenusCategoriesReq) returns (ListMenusCategoriesReply)
+
+	@doc "获取菜单种类"
+	@handler GetMenuCategory
+	get /menu/categories/:id (GetMenuCategoryReq) returns (GetMenuCategoryReply)
+
+	@doc "创建菜单种类"
+	@handler CreateMenuCategory
+	post /menu/categories (CreateMenuCategoryReq) returns (CreateMenuCategoryReply)
+
+	@doc "更新菜单种类"
+	@handler UpdateMenuCategory
+	put /menu/categories/:id (UpdateMenuCategoryReq) returns (UpdateMenuCategoryReply)
+
+	@doc "删除菜单种类"
+	@handler DeleteMenuCategory
+	delete /menu/categories/:id (DeleteMenuCategoryReq) returns (DeleteMenuCategoryReply)
+}
+

@@ -6,10 +6,10 @@ package menu
 import (
 	"net/http"
 
+	"github.com/solikewind/happyeat/app/internal/logic/menu"
+	"github.com/solikewind/happyeat/app/internal/svc"
+	"github.com/solikewind/happyeat/app/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"happyeat/app/internal/logic/menu"
-	"happyeat/app/internal/svc"
-	"happyeat/app/internal/types"
 )
 
 // 获取菜单

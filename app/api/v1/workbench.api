@@ -1,0 +1,9 @@
+syntax = "v1"
+
+info (
+    title: "HappyEat工作台服务API"
+    description: "HappyEat工作台服务相关接口"  
+    usage: "工作台负责展示当前正在进行的订单，完成后点击‘制作完成’。"
+    author: "Goxny"
+    version: "v1.0.0"
+)

@@ -16,6 +16,7 @@ type ListMenusReq {
     PageSize uint64 `json:"pageSize"`
     Name string `json:"name,optional"`
     Category string `json:"category,optional"`
+    Spec string `json:"spec,optional"`
  }
  type ListMenusReply {
     Menus []Menu `json:"menus"`

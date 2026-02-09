@@ -68,6 +68,7 @@ type ListMenusReq struct {
 	PageSize uint64 `json:"pageSize"`
 	Name     string `json:"name,optional"`
 	Category string `json:"category,optional"`
+	Spec     string `json:"spec,optional"`
 }
 
 type Menu struct {
@@ -76,6 +77,7 @@ type Menu struct {
 	Description string  `json:"description"` // 菜单描述
 	Price       float64 `json:"price"`       // 菜单价格
 	Category    string  `json:"category"`    // 菜单分类
+	Spec        string  `json:"spec"`        // 菜单规格
 	Create_at   int64   `json:"create_at"`   // 创建时间
 }
 

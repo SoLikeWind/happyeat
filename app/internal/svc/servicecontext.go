@@ -4,7 +4,7 @@
 package svc
 
 import (
-	"happyeat/app/internal/config"
+	"github.com/solikewind/happyeat/app/internal/config"
 )
 
 type ServiceContext struct {

@@ -7,9 +7,9 @@ import (
 	"flag"
 	"fmt"
 
-	"happyeat/app/internal/config"
-	"happyeat/app/internal/handler"
-	"happyeat/app/internal/svc"
+	"github.com/solikewind/happyeat/app/internal/config"
+	"github.com/solikewind/happyeat/app/internal/handler"
+	"github.com/solikewind/happyeat/app/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/rest"

@@ -6,10 +6,10 @@ package menutype
 import (
 	"net/http"
 
+	"github.com/solikewind/happyeat/app/internal/logic/menutype"
+	"github.com/solikewind/happyeat/app/internal/svc"
+	"github.com/solikewind/happyeat/app/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"happyeat/app/internal/logic/menutype"
-	"happyeat/app/internal/svc"
-	"happyeat/app/internal/types"
 )
 
 // 更新菜单种类

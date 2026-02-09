@@ -1,0 +1,35 @@
+syntax = "v1"
+
+info (
+    title: "HappyEat订单服务API"
+    description: "HappyEat订单服务相关接口"
+    usage: "可下单出单、对订单进行管理"
+    author: "Goxny"
+    version: "v1.0.0"
+)
+
+@server (
+    jwt:     Auth
+	prefix:  /central/v1
+	group:   order
+	timeout: 5s
+)
+
+service OrderService (
+    @doc "列出订单"
+    @doc "获取单个订单"
+    @doc "创建订单"
+    @doc "更新订单"
+    @doc "删除订单"
+)
+
+@server (
+    jwt:     Auth
+	prefix:  /central/v1
+	group:   orderstatus
+	timeout: 5s
+)
+
+service OrderStatusService (
+    
+)

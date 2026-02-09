@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	menu "happyeat/app/internal/handler/menu"
-	menutype "happyeat/app/internal/handler/menutype"
-	"happyeat/app/internal/svc"
+	menu "github.com/solikewind/happyeat/app/internal/handler/menu"
+	menutype "github.com/solikewind/happyeat/app/internal/handler/menutype"
+	"github.com/solikewind/happyeat/app/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
 )
@@ -17,6 +17,24 @@ import (
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
+			{
+				// 获取菜单
+				Method:  http.MethodGet,
+				Path:    "/menu/:id",
+				Handler: menu.GetMenuHandler(serverCtx),
+			},
+			{
+				// 更新菜单
+				Method:  http.MethodPut,
+				Path:    "/menu/:id",
+				Handler: menu.UpdateMenuHandler(serverCtx),
+			},
+			{
+				// 删除菜单
+				Method:  http.MethodDelete,
+				Path:    "/menu/:id",
+				Handler: menu.DeleteMenuHandler(serverCtx),
+			},
 			{
 				// 列出菜单
 				Method:  http.MethodGet,
@@ -28,24 +46,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/menus",
 				Handler: menu.CreateMenuHandler(serverCtx),
-			},
-			{
-				// 获取菜单
-				Method:  http.MethodGet,
-				Path:    "/menus/:id",
-				Handler: menu.GetMenuHandler(serverCtx),
-			},
-			{
-				// 更新菜单
-				Method:  http.MethodPut,
-				Path:    "/menus/:id",
-				Handler: menu.UpdateMenuHandler(serverCtx),
-			},
-			{
-				// 删除菜单
-				Method:  http.MethodDelete,
-				Path:    "/menus/:id",
-				Handler: menu.DeleteMenuHandler(serverCtx),
 			},
 		},
 		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
@@ -64,25 +64,25 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			{
 				// 创建菜单种类
 				Method:  http.MethodPost,
-				Path:    "/menu/categories",
+				Path:    "/menu/category",
 				Handler: menutype.CreateMenuCategoryHandler(serverCtx),
 			},
 			{
 				// 获取菜单种类
 				Method:  http.MethodGet,
-				Path:    "/menu/categories/:id",
+				Path:    "/menu/category/:id",
 				Handler: menutype.GetMenuCategoryHandler(serverCtx),
 			},
 			{
 				// 更新菜单种类
 				Method:  http.MethodPut,
-				Path:    "/menu/categories/:id",
+				Path:    "/menu/category/:id",
 				Handler: menutype.UpdateMenuCategoryHandler(serverCtx),
 			},
 			{
 				// 删除菜单种类
 				Method:  http.MethodDelete,
-				Path:    "/menu/categories/:id",
+				Path:    "/menu/category/:id",
 				Handler: menutype.DeleteMenuCategoryHandler(serverCtx),
 			},
 		},

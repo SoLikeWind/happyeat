@@ -1,0 +1,41 @@
+syntax = "v1"
+
+info (
+    title: "HappyEat餐桌服务API"
+    description: "HappyEat餐桌服务相关接口"
+    usage: "餐桌管理，可查看餐桌状态、餐桌订单"
+    author: "Goxny"
+    version: "v1.0.0"
+)
+
+import "tabletypes.api"
+
+@server (
+	jwt:     Auth
+	prefix:  /central/v1
+	group:   table
+	timeout: 5s
+)
+
+service TableService (
+    @doc "列出餐卓"
+    @doc "获取单个餐卓"
+    @doc "创建餐卓"
+    @doc "更新餐卓"
+    @doc "删除餐卓"
+)
+
+@server (
+	jwt:     Auth
+	prefix:  /central/v1
+	group:   tablecategory
+	timeout: 5s
+)
+
+service TableCategoryService(
+    @doc "列出餐卓类别"
+    @doc "获取单个餐卓类别"
+    @doc "创建餐卓类别"
+    @doc "更新餐卓类别"
+    @doc "删除餐卓类别"
+)

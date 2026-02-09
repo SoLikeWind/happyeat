@@ -6,8 +6,8 @@ package menutype
 import (
 	"context"
 
-	"happyeat/app/internal/svc"
-	"happyeat/app/internal/types"
+	"github.com/solikewind/happyeat/app/internal/svc"
+	"github.com/solikewind/happyeat/app/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )

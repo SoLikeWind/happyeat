@@ -3,6 +3,7 @@ syntax = "v1"
 info (
 	title:       "HappyEat菜单服务API"
 	description: "HappyEat菜单服务相关接口"
+	usage:       "菜单展示、分类管理。"
 	author:      "Goxny"
 	version:     "v1.0.0"
 )
@@ -20,9 +21,9 @@ service MenuService {
 	@handler ListMenus
 	get /menus (ListMenusReq) returns (ListMenusReply)
 
-	@doc "获取菜单"
+	@doc "获取单个菜单"
 	@handler GetMenu
-	get /menus/:id (GetMenuReq) returns (GetMenuReply)
+	get /menu/:id (GetMenuReq) returns (GetMenuReply)
 
 	@doc "创建菜单"
 	@handler CreateMenu
@@ -30,11 +31,11 @@ service MenuService {
 
 	@doc "更新菜单"
 	@handler UpdateMenu
-	put /menus/:id (UpdateMenuReq) returns (UpdateMenuReply)
+	put /menu/:id (UpdateMenuReq) returns (UpdateMenuReply)
 
 	@doc "删除菜单"
 	@handler DeleteMenu
-	delete /menus/:id (DeleteMenuReq) returns (DeleteMenuReply)
+	delete /menu/:id (DeleteMenuReq) returns (DeleteMenuReply)
 }
 
 @server (
@@ -50,18 +51,18 @@ service MenuService {
 
 	@doc "获取菜单种类"
 	@handler GetMenuCategory
-	get /menu/categories/:id (GetMenuCategoryReq) returns (GetMenuCategoryReply)
+	get /menu/category/:id (GetMenuCategoryReq) returns (GetMenuCategoryReply)
 
 	@doc "创建菜单种类"
 	@handler CreateMenuCategory
-	post /menu/categories (CreateMenuCategoryReq) returns (CreateMenuCategoryReply)
+	post /menu/category (CreateMenuCategoryReq) returns (CreateMenuCategoryReply)
 
 	@doc "更新菜单种类"
 	@handler UpdateMenuCategory
-	put /menu/categories/:id (UpdateMenuCategoryReq) returns (UpdateMenuCategoryReply)
+	put /menu/category/:id (UpdateMenuCategoryReq) returns (UpdateMenuCategoryReply)
 
 	@doc "删除菜单种类"
 	@handler DeleteMenuCategory
-	delete /menu/categories/:id (DeleteMenuCategoryReq) returns (DeleteMenuCategoryReply)
+	delete /menu/category/:id (DeleteMenuCategoryReq) returns (DeleteMenuCategoryReply)
 }
 

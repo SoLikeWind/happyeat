@@ -1,9 +1,0 @@
-Name: MenuService
-Host: 0.0.0.0
-Port: 8888
-
-# 数据库 DSN，供 ent 使用（pgx 驱动）
-# DataSourceName: "postgres://user:pass@localhost:5432/happyeat?sslmode=disable"
-
-casbin:
-  model: "[request_definition]\nr = sub, obj, act\n[policy_definition]\np = sub, obj, act\n[role_definition]\ng = _, _\n[policy_effect]\ne = some(where (p.eft == allow))\n[matchers]\nm = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act"

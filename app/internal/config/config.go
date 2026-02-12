@@ -20,5 +20,5 @@ type Auth struct {
 	AccessExpire int64
 }
 type Casbin struct {
-	Model string
+	Model string // 模型内联字符串（与 yaml 中 casbin.model 一致）；策略从数据库 casbin_rule 表加载
 }

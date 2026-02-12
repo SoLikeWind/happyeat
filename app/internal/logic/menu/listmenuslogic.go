@@ -54,5 +54,5 @@ func (l *ListMenusLogic) ListMenus(req *types.ListMenusReq) (*types.ListMenusRep
 		menus = append(menus, entMenuToType(e))
 	}
 
-	return &types.ListMenusReply{Menus: menus, Total: uint64(total)}, nil
+	return &types.ListMenusReply{Menus: menus, Total: total}, nil
 }

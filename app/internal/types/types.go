@@ -46,7 +46,7 @@ type CreateTableCategoryReply struct {
 }
 
 type CreateTableCategoryReq struct {
-	Name        string `json:"name,optional"`
+	Name        string `json:"name"`
 	Description string `json:"description,optional"`
 }
 
@@ -54,10 +54,10 @@ type CreateTableReply struct {
 }
 
 type CreateTableReq struct {
-	Code       string `json:"code,optional"`
-	Status     string `json:"status,optional"`
-	Capacity   int    `json:"capacity,optional"`
-	CategoryId uint64 `json:"category_id,optional"`
+	Code       string `json:"code"`
+	Status     string `json:"status"`
+	Capacity   int    `json:"capacity"`
+	CategoryId uint64 `json:"category_id"`
 	QrCode     string `json:"qr_code,optional"`
 }
 
@@ -131,35 +131,35 @@ type GetTableReq struct {
 
 type ListMenusCategoriesReply struct {
 	Categories []MenuCategory `json:"categories"`
-	Total      uint64         `json:"total"`
+	Total      int64          `json:"total"`
 }
 
 type ListMenusCategoriesReq struct {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64  `json:"current,optional" form:"current,optional"`
+	PageSize int64  `json:"pageSize,optional" form:"pageSize,optional"`
 	Name     string `json:"name,optional" form:"name,optional"`
 }
 
 type ListMenusReply struct {
 	Menus []Menu `json:"menus"`
-	Total uint64 `json:"total"`
+	Total int64  `json:"total"`
 }
 
 type ListMenusReq struct {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64  `json:"current,optional" form:"current,optional"`
+	PageSize int64  `json:"pageSize,optional" form:"pageSize,optional"`
 	Name     string `json:"name,optional" form:"name,optional"`
 	Category string `json:"category,optional" form:"category,optional"` // 按分类名字筛选
 }
 
 type ListOrdersReply struct {
 	Orders []Order `json:"orders"`
-	Total  uint64  `json:"total"`
+	Total  int64   `json:"total"`
 }
 
 type ListOrdersReq struct {
-	Current   uint64 `json:"current,optional" form:"current,optional"`
-	PageSize  uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current   int64  `json:"current,optional" form:"current,optional"`
+	PageSize  int64  `json:"pageSize,optional" form:"pageSize,optional"`
 	Status    string `json:"status,optional" form:"status"`
 	OrderType string `json:"order_type,optional" form:"order_type"` // dine_in | takeaway
 	TableId   uint64 `json:"table_id,optional" form:"table_id"`     // 按餐桌筛选
@@ -167,23 +167,23 @@ type ListOrdersReq struct {
 
 type ListTableCategoriesReply struct {
 	Categories []TableCategory `json:"categories"`
-	Total      uint64          `json:"total"`
+	Total      int64           `json:"total"`
 }
 
 type ListTableCategoriesReq struct {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64  `json:"current,optional" form:"current,optional"`
+	PageSize int64  `json:"pageSize,optional" form:"pageSize,optional"`
 	Name     string `json:"name,optional" form:"name,optional"`
 }
 
 type ListTablesReply struct {
 	Tables []Table `json:"tables"`
-	Total  uint64  `json:"total"`
+	Total  int64   `json:"total"`
 }
 
 type ListTablesReq struct {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64  `json:"current,optional" form:"current,optional"`
+	PageSize int64  `json:"pageSize,optional" form:"pageSize,optional"`
 	Code     string `json:"code,optional" form:"code"`
 	Status   string `json:"status,optional" form:"status"`
 	Category string `json:"category,optional" form:"category"` // 按分类名字筛选
@@ -191,12 +191,12 @@ type ListTablesReq struct {
 
 type ListWorkbenchOrdersReply struct {
 	Orders []Order `json:"orders"`
-	Total  uint64  `json:"total"`
+	Total  int64   `json:"total"`
 }
 
 type ListWorkbenchOrdersReq struct {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64  `json:"current,optional" form:"current,optional"`
+	PageSize int64  `json:"pageSize,optional" form:"pageSize,optional"`
 	Status   string `json:"status,optional" form:"status"` // 不传则默认查 created,paid,preparing
 }
 

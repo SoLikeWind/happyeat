@@ -9,8 +9,8 @@ import (
 
 	"github.com/solikewind/happyeat/app/internal/svc"
 	"github.com/solikewind/happyeat/app/internal/types"
-	menudata "github.com/solikewind/happyeat/dal/model/menu"
 	"github.com/solikewind/happyeat/dal/model/ent"
+	menudata "github.com/solikewind/happyeat/dal/model/menu"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -40,7 +40,7 @@ func (l *UpdateMenuLogic) UpdateMenu(req *types.UpdateMenuReq) (*types.UpdateMen
 		return nil, errors.New("价格不能为负")
 	}
 
-	_, err := l.svcCtx.MenuType.GetByID(l.ctx, int(m.CategoryId))
+	_, err := l.svcCtx.MenuType.GetByID(l.ctx, m.CategoryId)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, errors.New("分类不存在")

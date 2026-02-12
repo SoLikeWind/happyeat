@@ -29,14 +29,14 @@ type CreateMenuReply {}
 
 // 列表为 GET，参数从 query 解析；current/pageSize 不传时由 logic 默认为 1/10
 type ListMenusReq {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64 `json:"current,optional" form:"current,optional"`
+	PageSize int64 `json:"pageSize,optional" form:"pageSize,optional"`
 	Name     string `json:"name,optional" form:"name,optional"`
 	Category string `json:"category,optional" form:"category,optional"` // 按分类名字筛选
 }
  type ListMenusReply {
     Menus []Menu `json:"menus"`
-    Total uint64 `json:"total"`
+    Total int64 `json:"total"`
  }
 
  type GetMenuReq {
@@ -60,13 +60,13 @@ type ListMenusReq {
 
 // 列表为 GET，参数从 query 解析；current/pageSize/name 不传时由 logic 默认或不过滤
 type ListMenusCategoriesReq {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64 `json:"current,optional" form:"current,optional"`
+	PageSize int64 `json:"pageSize,optional" form:"pageSize,optional"`
 	Name     string `json:"name,optional" form:"name,optional"`
 }
  type ListMenusCategoriesReply {
     Categories []MenuCategory `json:"categories"`
-    Total uint64 `json:"total"`
+    Total int64 `json:"total"`
  }
 
  type GetMenuCategoryReq {

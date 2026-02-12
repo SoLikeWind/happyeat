@@ -8,6 +8,7 @@ import (
 
 	"github.com/solikewind/happyeat/app/internal/svc"
 	"github.com/solikewind/happyeat/app/internal/types"
+	"github.com/solikewind/happyeat/dal/model/ent"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -28,7 +29,22 @@ func NewGetTableCategoryLogic(ctx context.Context, svcCtx *svc.ServiceContext) *
 }
 
 func (l *GetTableCategoryLogic) GetTableCategory(req *types.GetTableCategoryReq) (resp *types.GetTableCategoryReply, err error) {
-	// todo: add your logic here and delete this line
+	category, err := l.svcCtx.TableType.GetByID(l.ctx, req.Id)
+	if err != nil {
+		return nil, err
+	}
 
-	return
+	return &types.GetTableCategoryReply{
+		TableCategory: entTableCategoryToType(category),
+	}, nil
+}
+
+func entTableCategoryToType(e *ent.TableCategory) types.TableCategory {
+	out := types.TableCategory{Id: uint64(e.ID), Name: e.Name}
+
+	if e.Description != nil {
+		out.Description = *e.Description
+	}
+
+	return out
 }

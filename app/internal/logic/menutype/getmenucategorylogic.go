@@ -29,7 +29,7 @@ func NewGetMenuCategoryLogic(ctx context.Context, svcCtx *svc.ServiceContext) *G
 }
 
 func (l *GetMenuCategoryLogic) GetMenuCategory(req *types.GetMenuCategoryReq) (*types.GetMenuCategoryReply, error) {
-	cat, err := l.svcCtx.MenuType.GetByID(l.ctx, int(req.Id))
+	cat, err := l.svcCtx.MenuType.GetByID(l.ctx, req.Id)
 	if err != nil {
 		return nil, err
 	}

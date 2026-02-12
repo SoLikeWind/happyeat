@@ -55,6 +55,6 @@ func (l *ListMenusCategoriesLogic) ListMenusCategories(req *types.ListMenusCateg
 
 	return &types.ListMenusCategoriesReply{
 		Categories: categories,
-		Total:      uint64(total),
+		Total:      total,
 	}, nil
 }

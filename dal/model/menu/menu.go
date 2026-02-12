@@ -99,7 +99,7 @@ type ListMenusFilter struct {
 }
 
 // List 分页列出菜单（含 category、specs），返回列表与总数。
-func (m *Menu) List(ctx context.Context, f ListMenusFilter) ([]*ent.Menu, int, error) {
+func (m *Menu) List(ctx context.Context, f ListMenusFilter) ([]*ent.Menu, int64, error) {
 	q := m.c.Menu.Query().WithCategory().WithSpecs()
 	if f.Name != "" {
 		q = q.Where(entmenu.NameContains(f.Name))
@@ -121,7 +121,7 @@ func (m *Menu) List(ctx context.Context, f ListMenusFilter) ([]*ent.Menu, int, e
 		return nil, 0, err
 	}
 
-	return list, total, nil
+	return list, int64(total), nil
 }
 
 // UpdateMenuInput 更新菜单入参。

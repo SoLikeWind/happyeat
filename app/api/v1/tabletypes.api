@@ -10,15 +10,15 @@ info (
 import "../base/tablebase.api"
 
 type ListTablesReq {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64 `json:"current,optional" form:"current,optional"`
+	PageSize int64 `json:"pageSize,optional" form:"pageSize,optional"`
 	Code     string `json:"code,optional" form:"code"`
 	Status   string `json:"status,optional" form:"status"`
 	Category string `json:"category,optional" form:"category"` // 按分类名字筛选
 }
 type ListTablesReply {
 	Tables []Table `json:"tables"`
-	Total  uint64  `json:"total"`
+	Total  int64   `json:"total"`
 }
 
 type GetTableReq {
@@ -49,13 +49,13 @@ type DeleteTableReq {
 type DeleteTableReply {}
 
 type ListTableCategoriesReq {
-	Current  uint64 `json:"current,optional" form:"current,optional"`
-	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current  int64 `json:"current,optional" form:"current,optional"`
+	PageSize int64 `json:"pageSize,optional" form:"pageSize,optional"`
 	Name     string `json:"name,optional" form:"name,optional"`
 }
 type ListTableCategoriesReply {
 	Categories []TableCategory `json:"categories"`
-	Total      uint64          `json:"total"`
+	Total      int64           `json:"total"`
 }
 
 type GetTableCategoryReq {
@@ -67,7 +67,7 @@ type GetTableCategoryReply {
 
 // 创建餐桌分类：name/description，id 服务端生成
 type CreateTableCategoryReq {
-	Name        string `json:"name,optional"`
+	Name        string `json:"name"`
 	Description string `json:"description,optional"`
 }
 type CreateTableCategoryReply {}

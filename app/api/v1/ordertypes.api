@@ -9,15 +9,15 @@ info (
 import "../base/orderbase.api"
 
 type ListOrdersReq {
-	Current   uint64 `json:"current,optional" form:"current,optional"`
-	PageSize  uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Current   int64 `json:"current,optional" form:"current,optional"`
+	PageSize  int64 `json:"pageSize,optional" form:"pageSize,optional"`
 	Status    string `json:"status,optional" form:"status"`
 	OrderType string `json:"order_type,optional" form:"order_type"` // dine_in | takeaway
-	TableId   uint64 `json:"table_id,optional" form:"table_id"`     // 按餐桌筛选
+	TableId   uint64 `json:"table_id,optional" form:"table_id"`       // 按餐桌筛选
 }
 type ListOrdersReply {
 	Orders []Order `json:"orders"`
-	Total  uint64  `json:"total"`
+	Total  int64   `json:"total"`
 }
 
 type GetOrderReq {

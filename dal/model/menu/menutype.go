@@ -4,10 +4,10 @@ package menu
 import (
 	"context"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/solikewind/happyeat/dal/model/ent"
 	entmenu "github.com/solikewind/happyeat/dal/model/ent/menu"
 	"github.com/solikewind/happyeat/dal/model/ent/menucategory"
-	"entgo.io/ent/dialect/sql"
 )
 
 // MenuType 菜单分类数据访问。
@@ -37,8 +37,8 @@ func (mt *MenuType) Create(ctx context.Context, in CreateMenuCategoryInput) (*en
 }
 
 // GetByID 按 ID 获取分类。
-func (mt *MenuType) GetByID(ctx context.Context, id int) (*ent.MenuCategory, error) {
-	return mt.c.MenuCategory.Get(ctx, id)
+func (mt *MenuType) GetByID(ctx context.Context, id uint64) (*ent.MenuCategory, error) {
+	return mt.c.MenuCategory.Get(ctx, int(id))
 }
 
 // ListMenuCategoriesFilter 分类列表筛选。
@@ -49,7 +49,7 @@ type ListMenuCategoriesFilter struct {
 }
 
 // List 分页列出分类，返回列表与总数。
-func (mt *MenuType) List(ctx context.Context, f ListMenuCategoriesFilter) ([]*ent.MenuCategory, int, error) {
+func (mt *MenuType) List(ctx context.Context, f ListMenuCategoriesFilter) ([]*ent.MenuCategory, int64, error) {
 	q := mt.c.MenuCategory.Query()
 	if f.Name != "" {
 		q = q.Where(menucategory.NameContains(f.Name))
@@ -68,7 +68,7 @@ func (mt *MenuType) List(ctx context.Context, f ListMenuCategoriesFilter) ([]*en
 		return nil, 0, err
 	}
 
-	return list, total, nil
+	return list, int64(total), nil
 }
 
 // Update 更新分类。

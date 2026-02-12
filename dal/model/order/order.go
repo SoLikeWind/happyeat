@@ -117,7 +117,7 @@ type ListOrdersFilter struct {
 }
 
 // List 分页列出订单（含 table、items），返回列表与总数。
-func (o *Order) List(ctx context.Context, f ListOrdersFilter) ([]*ent.Order, int, error) {
+func (o *Order) List(ctx context.Context, f ListOrdersFilter) ([]*ent.Order, int64, error) {
 	q := o.c.Order.Query().WithTable().WithItems()
 	if len(f.Statuses) > 0 {
 		q = q.Where(entorder.StatusIn(f.Statuses...))
@@ -144,7 +144,7 @@ func (o *Order) List(ctx context.Context, f ListOrdersFilter) ([]*ent.Order, int
 		return nil, 0, err
 	}
 
-	return list, total, nil
+	return list, int64(total), nil
 }
 
 // UpdateStatus 更新订单状态。

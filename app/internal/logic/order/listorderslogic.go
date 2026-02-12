@@ -60,5 +60,5 @@ func (l *ListOrdersLogic) ListOrders(req *types.ListOrdersReq) (*types.ListOrder
 		orders = append(orders, EntOrderToType(e))
 	}
 
-	return &types.ListOrdersReply{Orders: orders, Total: uint64(total)}, nil
+	return &types.ListOrdersReply{Orders: orders, Total: total}, nil
 }

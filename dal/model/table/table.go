@@ -67,7 +67,7 @@ type ListTablesFilter struct {
 }
 
 // List 分页列出餐桌（含 category），返回列表与总数。
-func (t *Table) List(ctx context.Context, f ListTablesFilter) ([]*ent.Table, int, error) {
+func (t *Table) List(ctx context.Context, f ListTablesFilter) ([]*ent.Table, int64, error) {
 	q := t.c.Table.Query().WithCategory()
 	if f.Code != "" {
 		q = q.Where(enttable.CodeContains(f.Code))
@@ -92,7 +92,7 @@ func (t *Table) List(ctx context.Context, f ListTablesFilter) ([]*ent.Table, int
 		return nil, 0, err
 	}
 
-	return list, total, nil
+	return list, int64(total), nil
 }
 
 // UpdateTableInput 更新餐桌入参。

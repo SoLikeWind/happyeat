@@ -4,10 +4,10 @@ package table
 import (
 	"context"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/solikewind/happyeat/dal/model/ent"
 	enttable "github.com/solikewind/happyeat/dal/model/ent/table"
 	"github.com/solikewind/happyeat/dal/model/ent/tablecategory"
-	"entgo.io/ent/dialect/sql"
 )
 
 // TableType 餐桌分类数据访问。
@@ -37,19 +37,19 @@ func (tt *TableType) Create(ctx context.Context, in CreateTableCategoryInput) (*
 }
 
 // GetByID 按 ID 获取分类。
-func (tt *TableType) GetByID(ctx context.Context, id int) (*ent.TableCategory, error) {
-	return tt.c.TableCategory.Get(ctx, id)
+func (tt *TableType) GetByID(ctx context.Context, id uint64) (*ent.TableCategory, error) {
+	return tt.c.TableCategory.Get(ctx, int(id))
 }
 
 // ListTableCategoriesFilter 分类列表筛选。
 type ListTableCategoriesFilter struct {
 	Name   string
-	Offset int
-	Limit  int
+	Offset int64
+	Limit  int64
 }
 
 // List 分页列出分类，返回列表与总数。
-func (tt *TableType) List(ctx context.Context, f ListTableCategoriesFilter) ([]*ent.TableCategory, int, error) {
+func (tt *TableType) List(ctx context.Context, f ListTableCategoriesFilter) ([]*ent.TableCategory, int64, error) {
 	q := tt.c.TableCategory.Query()
 	if f.Name != "" {
 		q = q.Where(tablecategory.NameContains(f.Name))
@@ -63,12 +63,12 @@ func (tt *TableType) List(ctx context.Context, f ListTableCategoriesFilter) ([]*
 		f.Limit = 10
 	}
 
-	list, err := q.Order(tablecategory.ByID(sql.OrderDesc())).Limit(f.Limit).Offset(f.Offset).All(ctx)
+	list, err := q.Order(tablecategory.ByID(sql.OrderDesc())).Limit(int(f.Limit)).Offset(int(f.Offset)).All(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return list, total, nil
+	return list, int64(total), nil
 }
 
 // Update 更新分类。

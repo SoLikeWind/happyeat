@@ -64,5 +64,5 @@ func (l *ListWorkbenchOrdersLogic) ListWorkbenchOrders(req *types.ListWorkbenchO
 		orders = append(orders, order.EntOrderToType(e))
 	}
 
-	return &types.ListWorkbenchOrdersReply{Orders: orders, Total: uint64(total)}, nil
+	return &types.ListWorkbenchOrdersReply{Orders: orders, Total: total}, nil
 }

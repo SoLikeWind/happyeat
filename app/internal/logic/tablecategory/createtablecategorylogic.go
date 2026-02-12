@@ -5,9 +5,11 @@ package tablecategory
 
 import (
 	"context"
+	"errors"
 
 	"github.com/solikewind/happyeat/app/internal/svc"
 	"github.com/solikewind/happyeat/app/internal/types"
+	tabledata "github.com/solikewind/happyeat/dal/model/table"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -27,8 +29,18 @@ func NewCreateTableCategoryLogic(ctx context.Context, svcCtx *svc.ServiceContext
 	}
 }
 
-func (l *CreateTableCategoryLogic) CreateTableCategory(req *types.CreateTableCategoryReq) (resp *types.CreateTableCategoryReply, err error) {
-	// todo: add your logic here and delete this line
+func (l *CreateTableCategoryLogic) CreateTableCategory(req *types.CreateTableCategoryReq) (*types.CreateTableCategoryReply, error) {
+	if req.Name == "" {
+		return nil, errors.New("分类名称不能为空")
+	}
 
-	return
+	_, err := l.svcCtx.TableType.Create(l.ctx, tabledata.CreateTableCategoryInput{
+		Name:        req.Name,
+		Description: req.Description,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.CreateTableCategoryReply{}, nil
 }

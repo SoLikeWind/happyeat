@@ -31,16 +31,14 @@ func NewCreateMenuLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Create
 }
 
 func (l *CreateMenuLogic) CreateMenu(req *types.CreateMenuReq) (*types.CreateMenuReply, error) {
-	m := req.Menu
-
-	if m.Name == "" {
+	if req.Name == "" {
 		return nil, errors.New("菜单名称不能为空")
 	}
-	if m.Price < 0 {
+	if req.Price < 0 {
 		return nil, errors.New("价格不能为负")
 	}
 
-	_, err := l.svcCtx.MenuType.GetByID(l.ctx, int(m.CategoryId))
+	_, err := l.svcCtx.MenuType.GetByID(l.ctx, int(req.CategoryId))
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, errors.New("分类不存在")
@@ -48,17 +46,17 @@ func (l *CreateMenuLogic) CreateMenu(req *types.CreateMenuReq) (*types.CreateMen
 		return nil, err
 	}
 
-	specs := make([]menudata.SpecInput, 0, len(m.Specs))
-	for _, s := range m.Specs {
+	specs := make([]menudata.SpecInput, 0, len(req.Specs))
+	for _, s := range req.Specs {
 		specs = append(specs, menudata.SpecInput{SpecType: s.SpecType, SpecValue: s.SpecValue, PriceDelta: s.PriceDelta})
 	}
 
 	_, err = l.svcCtx.Menu.Create(l.ctx, menudata.CreateMenuInput{
-		Name:        m.Name,
-		Description: m.Description,
-		Image:       m.Image,
-		Price:       m.Price,
-		CategoryID:  int(m.CategoryId),
+		Name:        req.Name,
+		Description: req.Description,
+		Image:       req.Image,
+		Price:       req.Price,
+		CategoryID:  int(req.CategoryId),
 		Specs:       specs,
 	})
 	if err != nil {

@@ -7,14 +7,20 @@ type CreateMenuCategoryReply struct {
 }
 
 type CreateMenuCategoryReq struct {
-	MenuCategory MenuCategory `json:"category"`
+	Name        string `json:"name,optional"`
+	Description string `json:"description,optional"`
 }
 
 type CreateMenuReply struct {
 }
 
 type CreateMenuReq struct {
-	Menu Menu `json:"menu"`
+	Name        string     `json:"name"`
+	Description string     `json:"description,optional"`
+	Image       string     `json:"image,optional"`
+	Price       float64    `json:"price"`
+	CategoryId  uint64     `json:"category_id"`
+	Specs       []MenuSpec `json:"specs,optional"`
 }
 
 type CreateOrderItemReq struct {
@@ -40,14 +46,19 @@ type CreateTableCategoryReply struct {
 }
 
 type CreateTableCategoryReq struct {
-	TableCategory TableCategory `json:"category"`
+	Name        string `json:"name,optional"`
+	Description string `json:"description,optional"`
 }
 
 type CreateTableReply struct {
 }
 
 type CreateTableReq struct {
-	Table Table `json:"table"`
+	Code       string `json:"code,optional"`
+	Status     string `json:"status,optional"`
+	Capacity   int    `json:"capacity,optional"`
+	CategoryId uint64 `json:"category_id,optional"`
+	QrCode     string `json:"qr_code,optional"`
 }
 
 type DeleteMenuCategoryReply struct {
@@ -124,9 +135,9 @@ type ListMenusCategoriesReply struct {
 }
 
 type ListMenusCategoriesReq struct {
-	Current  uint64 `json:"current"`
-	PageSize uint64 `json:"pageSize"`
-	Name     string `json:"name,optional"`
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Name     string `json:"name,optional" form:"name,optional"`
 }
 
 type ListMenusReply struct {
@@ -135,10 +146,10 @@ type ListMenusReply struct {
 }
 
 type ListMenusReq struct {
-	Current  uint64 `json:"current"`
-	PageSize uint64 `json:"pageSize"`
-	Name     string `json:"name,optional"`
-	Category string `json:"category,optional"` // 按分类名字筛选
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Name     string `json:"name,optional" form:"name,optional"`
+	Category string `json:"category,optional" form:"category,optional"` // 按分类名字筛选
 }
 
 type ListOrdersReply struct {
@@ -147,11 +158,11 @@ type ListOrdersReply struct {
 }
 
 type ListOrdersReq struct {
-	Current   uint64 `json:"current"`
-	PageSize  uint64 `json:"pageSize"`
-	Status    string `json:"status,optional"`
-	OrderType string `json:"order_type,optional"` // dine_in | takeaway
-	TableId   uint64 `json:"table_id,optional"`   // 按餐桌筛选
+	Current   uint64 `json:"current,optional" form:"current,optional"`
+	PageSize  uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Status    string `json:"status,optional" form:"status"`
+	OrderType string `json:"order_type,optional" form:"order_type"` // dine_in | takeaway
+	TableId   uint64 `json:"table_id,optional" form:"table_id"`     // 按餐桌筛选
 }
 
 type ListTableCategoriesReply struct {
@@ -160,9 +171,9 @@ type ListTableCategoriesReply struct {
 }
 
 type ListTableCategoriesReq struct {
-	Current  uint64 `json:"current"`
-	PageSize uint64 `json:"pageSize"`
-	Name     string `json:"name,optional"`
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Name     string `json:"name,optional" form:"name,optional"`
 }
 
 type ListTablesReply struct {
@@ -171,11 +182,11 @@ type ListTablesReply struct {
 }
 
 type ListTablesReq struct {
-	Current  uint64 `json:"current"`
-	PageSize uint64 `json:"pageSize"`
-	Code     string `json:"code,optional"`
-	Status   string `json:"status,optional"`
-	Category string `json:"category,optional"` // 按分类名字筛选
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Code     string `json:"code,optional" form:"code"`
+	Status   string `json:"status,optional" form:"status"`
+	Category string `json:"category,optional" form:"category"` // 按分类名字筛选
 }
 
 type ListWorkbenchOrdersReply struct {
@@ -184,9 +195,19 @@ type ListWorkbenchOrdersReply struct {
 }
 
 type ListWorkbenchOrdersReq struct {
-	Current  uint64 `json:"current"`
-	PageSize uint64 `json:"pageSize"`
-	Status   string `json:"status,optional"` // 不传则默认查 created,paid,preparing
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Status   string `json:"status,optional" form:"status"` // 不传则默认查 created,paid,preparing
+}
+
+type LoginReply struct {
+	AccessToken string `json:"access_token"`
+	Expire      int64  `json:"expire"` // 过期时间戳（秒）
+}
+
+type LoginReq struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type Menu struct {

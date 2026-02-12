@@ -30,15 +30,13 @@ func NewCreateMenuCategoryLogic(ctx context.Context, svcCtx *svc.ServiceContext)
 }
 
 func (l *CreateMenuCategoryLogic) CreateMenuCategory(req *types.CreateMenuCategoryReq) (*types.CreateMenuCategoryReply, error) {
-	c := req.MenuCategory
-
-	if c.Name == "" {
+	if req.Name == "" {
 		return nil, errors.New("分类名称不能为空")
 	}
 
 	_, err := l.svcCtx.MenuType.Create(l.ctx, menudata.CreateMenuCategoryInput{
-		Name:        c.Name,
-		Description: c.Description,
+		Name:        req.Name,
+		Description: req.Description,
 	})
 	if err != nil {
 		return nil, err

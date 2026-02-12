@@ -1,0 +1,15 @@
+syntax = "v1"
+
+info (
+	title:   "HappyEat 认证"
+	version: "v1.0.0"
+)
+
+type LoginReq {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+type LoginReply {
+	AccessToken string `json:"access_token"`
+	Expire      int64  `json:"expire"` // 过期时间戳（秒）
+}

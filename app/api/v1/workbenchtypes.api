@@ -10,9 +10,9 @@ import "../base/orderbase.api"
 
 // 工作台展示待处理订单（默认 created/paid/preparing）；出单用 PUT /order/:id/status { "status": "completed" }
 type ListWorkbenchOrdersReq {
-	Current  uint64 `json:"current"`
-	PageSize uint64 `json:"pageSize"`
-	Status   string `json:"status,optional"` // 不传则默认查 created,paid,preparing
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Status   string `json:"status,optional" form:"status"` // 不传则默认查 created,paid,preparing
 }
 type ListWorkbenchOrdersReply {
 	Orders []Order `json:"orders"`

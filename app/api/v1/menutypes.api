@@ -9,12 +9,31 @@ info (
 
 import "../base/menubase.api"
 
+// 创建分类：name/description，id 服务端生成；name 由 logic 校验非空
+type CreateMenuCategoryReq {
+	Name        string `json:"name,optional"`
+	Description string `json:"description,optional"`
+}
+type CreateMenuCategoryReply {}
+
+// 创建菜单：业务字段，id/create_at/update_at 服务端生成
+type CreateMenuReq {
+	Name        string     `json:"name"`
+	Description string     `json:"description,optional"`
+	Image       string     `json:"image,optional"`
+	Price       float64    `json:"price"`
+	CategoryId  uint64     `json:"category_id"`
+	Specs       []MenuSpec `json:"specs,optional"`
+}
+type CreateMenuReply {}
+
+// 列表为 GET，参数从 query 解析；current/pageSize 不传时由 logic 默认为 1/10
 type ListMenusReq {
-    Current  uint64 `json:"current"`
-    PageSize uint64 `json:"pageSize"`
-    Name     string `json:"name,optional"`
-    Category string `json:"category,optional"` // 按分类名字筛选
- }
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Name     string `json:"name,optional" form:"name,optional"`
+	Category string `json:"category,optional" form:"category,optional"` // 按分类名字筛选
+}
  type ListMenusReply {
     Menus []Menu `json:"menus"`
     Total uint64 `json:"total"`
@@ -27,10 +46,6 @@ type ListMenusReq {
     Menu Menu `json:"menu"`
  }
 
- type CreateMenuReq {
-    Menu Menu `json:"menu"`
- }
- type CreateMenuReply {}
 
  type UpdateMenuReq {
     Id   uint64 `path:"id"`
@@ -43,11 +58,12 @@ type ListMenusReq {
  }
  type DeleteMenuReply {}
 
- type ListMenusCategoriesReq {
-    Current uint64 `json:"current"`
-    PageSize uint64 `json:"pageSize"`
-    Name string `json:"name,optional"`
- }
+// 列表为 GET，参数从 query 解析；current/pageSize/name 不传时由 logic 默认或不过滤
+type ListMenusCategoriesReq {
+	Current  uint64 `json:"current,optional" form:"current,optional"`
+	PageSize uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Name     string `json:"name,optional" form:"name,optional"`
+}
  type ListMenusCategoriesReply {
     Categories []MenuCategory `json:"categories"`
     Total uint64 `json:"total"`
@@ -60,10 +76,6 @@ type ListMenusReq {
     MenuCategory MenuCategory `json:"category"`
  }
 
- type CreateMenuCategoryReq {
-    MenuCategory MenuCategory `json:"category"`
- }
- type CreateMenuCategoryReply {}
 
  type UpdateMenuCategoryReq {
     Id           uint64        `path:"id"`

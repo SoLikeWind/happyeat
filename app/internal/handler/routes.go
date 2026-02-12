@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	auth "github.com/solikewind/happyeat/app/internal/handler/auth"
 	menu "github.com/solikewind/happyeat/app/internal/handler/menu"
 	menutype "github.com/solikewind/happyeat/app/internal/handler/menutype"
 	order "github.com/solikewind/happyeat/app/internal/handler/order"
@@ -19,6 +20,19 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 登录获取 JWT，用于 Swagger Authorize 或前端
+				Method:  http.MethodPost,
+				Path:    "/auth/login",
+				Handler: auth.LoginHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/central/v1"),
+		rest.WithTimeout(5000*time.Millisecond),
+	)
+
 	server.AddRoutes(
 		[]rest.Route{
 			{

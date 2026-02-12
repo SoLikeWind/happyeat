@@ -6,32 +6,218 @@
     "application/json"
   ],
   "schemes": [
-    "https"
+    "http"
   ],
   "swagger": "2.0",
   "info": {
-    "version": "1.0"
+    "description": "HappyEat菜单、餐桌等服务统一入口",
+    "title": "HappyEat服务API",
+    "version": "v1.0.0"
   },
+  "host": "localhost:8888",
   "basePath": "/",
   "paths": {
-    "/from/{name}": {
-      "get": {
+    "/central/v1/auth/login": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
         "produces": [
           "application/json"
         ],
         "schemes": [
           "https"
         ],
-        "summary": "HappyeatHandler",
-        "operationId": "happyeatHandler",
+        "summary": "登录获取 JWT，用于 Swagger Authorize 或前端",
+        "operationId": "authLogin",
         "parameters": [
           {
-            "enum": [
-              "you",
-              "me"
-            ],
-            "type": "string",
-            "name": "name",
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "username",
+                "password"
+              ],
+              "properties": {
+                "password": {
+                  "type": "string"
+                },
+                "username": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "access_token": {
+                  "type": "string"
+                },
+                "expire": {
+                  "description": "过期时间戳（秒）",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/menu/categories": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "列出菜单种类",
+        "operationId": "menutypeListMenusCategories",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "current",
+                "pageSize"
+              ],
+              "properties": {
+                "current": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "pageSize": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "description": {
+                        "description": "描述",
+                        "type": "string"
+                      },
+                      "id": {
+                        "description": "分类id",
+                        "type": "integer"
+                      },
+                      "name": {
+                        "description": "分类名称",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/menu/category": {
+      "post": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "创建菜单种类",
+        "operationId": "menutypeCreateMenuCategory",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/menu/category/{id}": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "获取菜单种类",
+        "operationId": "menutypeGetMenuCategory",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
             "in": "path",
             "required": true
           }
@@ -42,8 +228,1903 @@
             "schema": {
               "type": "object",
               "properties": {
-                "message": {
+                "category": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "properties": {
+                    "description": {
+                      "description": "描述",
+                      "type": "string"
+                    },
+                    "id": {
+                      "description": "分类id",
+                      "type": "integer"
+                    },
+                    "name": {
+                      "description": "分类名称",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "更新菜单种类",
+        "operationId": "menutypeUpdateMenuCategory",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "category"
+              ],
+              "properties": {
+                "category": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "properties": {
+                    "description": {
+                      "description": "描述",
+                      "type": "string"
+                    },
+                    "id": {
+                      "description": "分类id",
+                      "type": "integer"
+                    },
+                    "name": {
+                      "description": "分类名称",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "删除菜单种类",
+        "operationId": "menutypeDeleteMenuCategory",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/menu/{id}": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "获取单个菜单",
+        "operationId": "menuGetMenu",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "menu": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "price",
+                    "category_id",
+                    "create_at",
+                    "update_at"
+                  ],
+                  "properties": {
+                    "category_id": {
+                      "description": "菜单分类id",
+                      "type": "integer"
+                    },
+                    "create_at": {
+                      "description": "创建时间",
+                      "type": "integer"
+                    },
+                    "description": {
+                      "description": "菜单描述",
+                      "type": "string"
+                    },
+                    "id": {
+                      "description": "菜单id",
+                      "type": "integer"
+                    },
+                    "image": {
+                      "description": "菜单图片",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "菜单名称",
+                      "type": "string"
+                    },
+                    "price": {
+                      "description": "菜单价格",
+                      "type": "number"
+                    },
+                    "specs": {
+                      "description": "规格列表",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "spec_type",
+                          "spec_value",
+                          "price_delta"
+                        ],
+                        "properties": {
+                          "price_delta": {
+                            "description": "加价",
+                            "type": "number"
+                          },
+                          "spec_type": {
+                            "description": "规格类型（如辣度、容量）",
+                            "type": "string"
+                          },
+                          "spec_value": {
+                            "description": "该类型下的一个选项（如微辣、大瓶）",
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "update_at": {
+                      "description": "更新时间",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "更新菜单",
+        "operationId": "menuUpdateMenu",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "menu"
+              ],
+              "properties": {
+                "menu": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name",
+                    "price",
+                    "category_id",
+                    "create_at",
+                    "update_at"
+                  ],
+                  "properties": {
+                    "category_id": {
+                      "description": "菜单分类id",
+                      "type": "integer"
+                    },
+                    "create_at": {
+                      "description": "创建时间",
+                      "type": "integer"
+                    },
+                    "description": {
+                      "description": "菜单描述",
+                      "type": "string"
+                    },
+                    "id": {
+                      "description": "菜单id",
+                      "type": "integer"
+                    },
+                    "image": {
+                      "description": "菜单图片",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "菜单名称",
+                      "type": "string"
+                    },
+                    "price": {
+                      "description": "菜单价格",
+                      "type": "number"
+                    },
+                    "specs": {
+                      "description": "规格列表",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "spec_type",
+                          "spec_value",
+                          "price_delta"
+                        ],
+                        "properties": {
+                          "price_delta": {
+                            "description": "加价",
+                            "type": "number"
+                          },
+                          "spec_type": {
+                            "description": "规格类型（如辣度、容量）",
+                            "type": "string"
+                          },
+                          "spec_value": {
+                            "description": "该类型下的一个选项（如微辣、大瓶）",
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "update_at": {
+                      "description": "更新时间",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "删除菜单",
+        "operationId": "menuDeleteMenu",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/menus": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "列出菜单",
+        "operationId": "menuListMenus",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "current",
+                "pageSize"
+              ],
+              "properties": {
+                "category": {
+                  "description": "按分类名字筛选",
                   "type": "string"
+                },
+                "current": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "pageSize": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "menus": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name",
+                      "price",
+                      "category_id",
+                      "create_at",
+                      "update_at"
+                    ],
+                    "properties": {
+                      "category_id": {
+                        "description": "菜单分类id",
+                        "type": "integer"
+                      },
+                      "create_at": {
+                        "description": "创建时间",
+                        "type": "integer"
+                      },
+                      "description": {
+                        "description": "菜单描述",
+                        "type": "string"
+                      },
+                      "id": {
+                        "description": "菜单id",
+                        "type": "integer"
+                      },
+                      "image": {
+                        "description": "菜单图片",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "菜单名称",
+                        "type": "string"
+                      },
+                      "price": {
+                        "description": "菜单价格",
+                        "type": "number"
+                      },
+                      "specs": {
+                        "description": "规格列表",
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "spec_type",
+                            "spec_value",
+                            "price_delta"
+                          ],
+                          "properties": {
+                            "price_delta": {
+                              "description": "加价",
+                              "type": "number"
+                            },
+                            "spec_type": {
+                              "description": "规格类型（如辣度、容量）",
+                              "type": "string"
+                            },
+                            "spec_value": {
+                              "description": "该类型下的一个选项（如微辣、大瓶）",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "update_at": {
+                        "description": "更新时间",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "创建菜单",
+        "operationId": "menuCreateMenu",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name",
+                "price",
+                "category_id"
+              ],
+              "properties": {
+                "category_id": {
+                  "type": "integer"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "image": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "price": {
+                  "type": "number"
+                },
+                "specs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "spec_type",
+                      "spec_value",
+                      "price_delta"
+                    ],
+                    "properties": {
+                      "price_delta": {
+                        "description": "加价",
+                        "type": "number"
+                      },
+                      "spec_type": {
+                        "description": "规格类型（如辣度、容量）",
+                        "type": "string"
+                      },
+                      "spec_value": {
+                        "description": "该类型下的一个选项（如微辣、大瓶）",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/order/{id}": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "获取单个订单",
+        "operationId": "orderGetOrder",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "order_no",
+                    "order_type",
+                    "status",
+                    "total_amount",
+                    "create_at",
+                    "update_at"
+                  ],
+                  "properties": {
+                    "create_at": {
+                      "description": "创建时间",
+                      "type": "integer"
+                    },
+                    "id": {
+                      "description": "订单id",
+                      "type": "integer"
+                    },
+                    "items": {
+                      "description": "订单明细",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "menu_name",
+                          "quantity",
+                          "unit_price",
+                          "amount"
+                        ],
+                        "properties": {
+                          "amount": {
+                            "description": "小计",
+                            "type": "number"
+                          },
+                          "menu_name": {
+                            "description": "菜品名称快照",
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "description": "数量",
+                            "type": "integer"
+                          },
+                          "spec_info": {
+                            "description": "规格描述快照",
+                            "type": "string"
+                          },
+                          "unit_price": {
+                            "description": "单价",
+                            "type": "number"
+                          }
+                        }
+                      }
+                    },
+                    "order_no": {
+                      "description": "订单号",
+                      "type": "string"
+                    },
+                    "order_type": {
+                      "description": "dine_in=堂食 takeaway=打包外带",
+                      "type": "string"
+                    },
+                    "remark": {
+                      "description": "备注",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "created/paid/preparing/completed/cancelled",
+                      "type": "string"
+                    },
+                    "table_id": {
+                      "description": "堂食时关联餐桌id，外带为0",
+                      "type": "integer"
+                    },
+                    "total_amount": {
+                      "description": "总金额",
+                      "type": "number"
+                    },
+                    "update_at": {
+                      "description": "更新时间",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/order/{id}/status": {
+      "put": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "更新订单状态",
+        "operationId": "orderUpdateOrderStatus",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "description": "paid/preparing/completed/cancelled",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/orders": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "列出订单",
+        "operationId": "orderListOrders",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "current",
+                "pageSize"
+              ],
+              "properties": {
+                "current": {
+                  "type": "integer"
+                },
+                "order_type": {
+                  "description": "dine_in | takeaway",
+                  "type": "string"
+                },
+                "pageSize": {
+                  "type": "integer"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "table_id": {
+                  "description": "按餐桌筛选",
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "orders": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "order_no",
+                      "order_type",
+                      "status",
+                      "total_amount",
+                      "create_at",
+                      "update_at"
+                    ],
+                    "properties": {
+                      "create_at": {
+                        "description": "创建时间",
+                        "type": "integer"
+                      },
+                      "id": {
+                        "description": "订单id",
+                        "type": "integer"
+                      },
+                      "items": {
+                        "description": "订单明细",
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "menu_name",
+                            "quantity",
+                            "unit_price",
+                            "amount"
+                          ],
+                          "properties": {
+                            "amount": {
+                              "description": "小计",
+                              "type": "number"
+                            },
+                            "menu_name": {
+                              "description": "菜品名称快照",
+                              "type": "string"
+                            },
+                            "quantity": {
+                              "description": "数量",
+                              "type": "integer"
+                            },
+                            "spec_info": {
+                              "description": "规格描述快照",
+                              "type": "string"
+                            },
+                            "unit_price": {
+                              "description": "单价",
+                              "type": "number"
+                            }
+                          }
+                        }
+                      },
+                      "order_no": {
+                        "description": "订单号",
+                        "type": "string"
+                      },
+                      "order_type": {
+                        "description": "dine_in=堂食 takeaway=打包外带",
+                        "type": "string"
+                      },
+                      "remark": {
+                        "description": "备注",
+                        "type": "string"
+                      },
+                      "status": {
+                        "description": "created/paid/preparing/completed/cancelled",
+                        "type": "string"
+                      },
+                      "table_id": {
+                        "description": "堂食时关联餐桌id，外带为0",
+                        "type": "integer"
+                      },
+                      "total_amount": {
+                        "description": "总金额",
+                        "type": "number"
+                      },
+                      "update_at": {
+                        "description": "更新时间",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "创建订单",
+        "operationId": "orderCreateOrder",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "order_type",
+                "items",
+                "total_amount"
+              ],
+              "properties": {
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "menu_name",
+                      "quantity",
+                      "unit_price"
+                    ],
+                    "properties": {
+                      "menu_name": {
+                        "type": "string"
+                      },
+                      "quantity": {
+                        "type": "integer"
+                      },
+                      "spec_info": {
+                        "type": "string"
+                      },
+                      "unit_price": {
+                        "type": "number"
+                      }
+                    }
+                  }
+                },
+                "order_type": {
+                  "description": "dine_in | takeaway",
+                  "type": "string"
+                },
+                "remark": {
+                  "type": "string"
+                },
+                "table_id": {
+                  "description": "堂食必填",
+                  "type": "integer"
+                },
+                "total_amount": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "order_no",
+                    "order_type",
+                    "status",
+                    "total_amount",
+                    "create_at",
+                    "update_at"
+                  ],
+                  "properties": {
+                    "create_at": {
+                      "description": "创建时间",
+                      "type": "integer"
+                    },
+                    "id": {
+                      "description": "订单id",
+                      "type": "integer"
+                    },
+                    "items": {
+                      "description": "订单明细",
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "menu_name",
+                          "quantity",
+                          "unit_price",
+                          "amount"
+                        ],
+                        "properties": {
+                          "amount": {
+                            "description": "小计",
+                            "type": "number"
+                          },
+                          "menu_name": {
+                            "description": "菜品名称快照",
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "description": "数量",
+                            "type": "integer"
+                          },
+                          "spec_info": {
+                            "description": "规格描述快照",
+                            "type": "string"
+                          },
+                          "unit_price": {
+                            "description": "单价",
+                            "type": "number"
+                          }
+                        }
+                      }
+                    },
+                    "order_no": {
+                      "description": "订单号",
+                      "type": "string"
+                    },
+                    "order_type": {
+                      "description": "dine_in=堂食 takeaway=打包外带",
+                      "type": "string"
+                    },
+                    "remark": {
+                      "description": "备注",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "created/paid/preparing/completed/cancelled",
+                      "type": "string"
+                    },
+                    "table_id": {
+                      "description": "堂食时关联餐桌id，外带为0",
+                      "type": "integer"
+                    },
+                    "total_amount": {
+                      "description": "总金额",
+                      "type": "number"
+                    },
+                    "update_at": {
+                      "description": "更新时间",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/table/categories": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "列出餐桌类别",
+        "operationId": "tablecategoryListTableCategories",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "current",
+                "pageSize"
+              ],
+              "properties": {
+                "current": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "pageSize": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "categories": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "name"
+                    ],
+                    "properties": {
+                      "description": {
+                        "description": "描述",
+                        "type": "string"
+                      },
+                      "id": {
+                        "description": "分类id",
+                        "type": "integer"
+                      },
+                      "name": {
+                        "description": "分类名称",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/table/category": {
+      "post": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "创建餐桌类别",
+        "operationId": "tablecategoryCreateTableCategory",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "description": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/table/category/{id}": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "获取餐桌类别",
+        "operationId": "tablecategoryGetTableCategory",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "properties": {
+                    "description": {
+                      "description": "描述",
+                      "type": "string"
+                    },
+                    "id": {
+                      "description": "分类id",
+                      "type": "integer"
+                    },
+                    "name": {
+                      "description": "分类名称",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "更新餐桌类别",
+        "operationId": "tablecategoryUpdateTableCategory",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "category"
+              ],
+              "properties": {
+                "category": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "name"
+                  ],
+                  "properties": {
+                    "description": {
+                      "description": "描述",
+                      "type": "string"
+                    },
+                    "id": {
+                      "description": "分类id",
+                      "type": "integer"
+                    },
+                    "name": {
+                      "description": "分类名称",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "删除餐桌类别",
+        "operationId": "tablecategoryDeleteTableCategory",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/table/{id}": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "获取单个餐桌",
+        "operationId": "tableGetTable",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "table": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "code",
+                    "status",
+                    "capacity",
+                    "category_id",
+                    "create_at",
+                    "update_at"
+                  ],
+                  "properties": {
+                    "capacity": {
+                      "description": "可坐人数",
+                      "type": "integer"
+                    },
+                    "category_id": {
+                      "description": "餐桌分类id",
+                      "type": "integer"
+                    },
+                    "code": {
+                      "description": "桌号",
+                      "type": "string"
+                    },
+                    "create_at": {
+                      "description": "创建时间",
+                      "type": "integer"
+                    },
+                    "id": {
+                      "description": "餐桌id",
+                      "type": "integer"
+                    },
+                    "qr_code": {
+                      "description": "二维码",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "idle=空闲 using=使用中 reserved=预留 cleaning=清洁中",
+                      "type": "string"
+                    },
+                    "update_at": {
+                      "description": "更新时间",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "更新餐桌",
+        "operationId": "tableUpdateTable",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "table"
+              ],
+              "properties": {
+                "table": {
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "code",
+                    "status",
+                    "capacity",
+                    "category_id",
+                    "create_at",
+                    "update_at"
+                  ],
+                  "properties": {
+                    "capacity": {
+                      "description": "可坐人数",
+                      "type": "integer"
+                    },
+                    "category_id": {
+                      "description": "餐桌分类id",
+                      "type": "integer"
+                    },
+                    "code": {
+                      "description": "桌号",
+                      "type": "string"
+                    },
+                    "create_at": {
+                      "description": "创建时间",
+                      "type": "integer"
+                    },
+                    "id": {
+                      "description": "餐桌id",
+                      "type": "integer"
+                    },
+                    "qr_code": {
+                      "description": "二维码",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "idle=空闲 using=使用中 reserved=预留 cleaning=清洁中",
+                      "type": "string"
+                    },
+                    "update_at": {
+                      "description": "更新时间",
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "删除餐桌",
+        "operationId": "tableDeleteTable",
+        "parameters": [
+          {
+            "type": "integer",
+            "name": "id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/tables": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "列出餐桌",
+        "operationId": "tableListTables",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "current",
+                "pageSize"
+              ],
+              "properties": {
+                "category": {
+                  "description": "按分类名字筛选",
+                  "type": "string"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "current": {
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "type": "integer"
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tables": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "code",
+                      "status",
+                      "capacity",
+                      "category_id",
+                      "create_at",
+                      "update_at"
+                    ],
+                    "properties": {
+                      "capacity": {
+                        "description": "可坐人数",
+                        "type": "integer"
+                      },
+                      "category_id": {
+                        "description": "餐桌分类id",
+                        "type": "integer"
+                      },
+                      "code": {
+                        "description": "桌号",
+                        "type": "string"
+                      },
+                      "create_at": {
+                        "description": "创建时间",
+                        "type": "integer"
+                      },
+                      "id": {
+                        "description": "餐桌id",
+                        "type": "integer"
+                      },
+                      "qr_code": {
+                        "description": "二维码",
+                        "type": "string"
+                      },
+                      "status": {
+                        "description": "idle=空闲 using=使用中 reserved=预留 cleaning=清洁中",
+                        "type": "string"
+                      },
+                      "update_at": {
+                        "description": "更新时间",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "创建餐桌",
+        "operationId": "tableCreateTable",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "code",
+                "status",
+                "capacity",
+                "category_id"
+              ],
+              "properties": {
+                "capacity": {
+                  "type": "integer"
+                },
+                "category_id": {
+                  "type": "integer"
+                },
+                "code": {
+                  "type": "string"
+                },
+                "qr_code": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "/central/v1/workbench/orders": {
+      "get": {
+        "security": [
+          {
+            "Bearer": []
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "schemes": [
+          "https"
+        ],
+        "summary": "工作台订单列表（默认待处理：created/paid/preparing）；出单用 更新订单状态 置为 completed",
+        "operationId": "workbenchListWorkbenchOrders",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "required": [
+                "current",
+                "pageSize"
+              ],
+              "properties": {
+                "current": {
+                  "type": "integer"
+                },
+                "pageSize": {
+                  "type": "integer"
+                },
+                "status": {
+                  "description": "不传则默认查 created,paid,preparing",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "orders": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "order_no",
+                      "order_type",
+                      "status",
+                      "total_amount",
+                      "create_at",
+                      "update_at"
+                    ],
+                    "properties": {
+                      "create_at": {
+                        "description": "创建时间",
+                        "type": "integer"
+                      },
+                      "id": {
+                        "description": "订单id",
+                        "type": "integer"
+                      },
+                      "items": {
+                        "description": "订单明细",
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "menu_name",
+                            "quantity",
+                            "unit_price",
+                            "amount"
+                          ],
+                          "properties": {
+                            "amount": {
+                              "description": "小计",
+                              "type": "number"
+                            },
+                            "menu_name": {
+                              "description": "菜品名称快照",
+                              "type": "string"
+                            },
+                            "quantity": {
+                              "description": "数量",
+                              "type": "integer"
+                            },
+                            "spec_info": {
+                              "description": "规格描述快照",
+                              "type": "string"
+                            },
+                            "unit_price": {
+                              "description": "单价",
+                              "type": "number"
+                            }
+                          }
+                        }
+                      },
+                      "order_no": {
+                        "description": "订单号",
+                        "type": "string"
+                      },
+                      "order_type": {
+                        "description": "dine_in=堂食 takeaway=打包外带",
+                        "type": "string"
+                      },
+                      "remark": {
+                        "description": "备注",
+                        "type": "string"
+                      },
+                      "status": {
+                        "description": "created/paid/preparing/completed/cancelled",
+                        "type": "string"
+                      },
+                      "table_id": {
+                        "description": "堂食时关联餐桌id，外带为0",
+                        "type": "integer"
+                      },
+                      "total_amount": {
+                        "description": "总金额",
+                        "type": "number"
+                      },
+                      "update_at": {
+                        "description": "更新时间",
+                        "type": "integer"
+                      }
+                    }
+                  }
+                },
+                "total": {
+                  "type": "integer"
                 }
               }
             }
@@ -52,7 +2133,14 @@
       }
     }
   },
-  "x-date": "2026-01-31 14:52:10",
+  "securityDefinitions": {
+    "Bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "x-date": "2026-02-12 15:54:45",
   "x-description": "This is a goctl generated swagger file.",
   "x-github": "https://github.com/zeromicro/go-zero",
   "x-go-zero-doc": "https://go-zero.dev/",

@@ -1,23 +1,40 @@
 syntax = "v1"
 
 info (
-	title:       "HappyEat服务API"
-	description: "HappyEat菜单、餐桌等服务统一入口"
-	usage:       "一次 goctl 生成所有 types、handler、logic"
-	author:      "Goxny"
-	version:     "v1.0.0"
+	title:                       "HappyEat服务API"
+	description:                 "HappyEat菜单、餐桌等服务统一入口"
+	usage:                       "一次 goctl 生成所有 types、handler、logic"
+	author:                      "Goxny"
+	version:                     "v1.0.0"
+	host:                        "localhost:8888"
+	schemes:                     "http"
+	securityDefinitionsFromJson: `{"Bearer":{"type":"apiKey","name":"Authorization","in":"header"}}`
 )
 
 import "menutypes.api"
 import "tabletypes.api"
 import "ordertypes.api"
 import "workbenchtypes.api"
+import "authtypes.api"
+
+// 登录接口（无需 JWT），获取 token 后用于其他接口的 Authorization: Bearer <token>
+@server (
+	prefix:  /central/v1
+	group:   auth
+	timeout: 5s
+)
+service HappyEatService {
+	@doc "登录获取 JWT，用于 Swagger Authorize 或前端"
+	@handler Login
+	post /auth/login (LoginReq) returns (LoginReply)
+}
 
 @server (
-	jwt:     Auth
-	prefix:  /central/v1
-	group:   menu
-	timeout: 5s
+	jwt:      Auth
+	authType: Bearer
+	prefix:   /central/v1
+	group:    menu
+	timeout:  5s
 )
 service HappyEatService {
 	@doc "列出菜单"
@@ -42,10 +59,11 @@ service HappyEatService {
 }
 
 @server (
-	jwt:     Auth
-	prefix:  /central/v1
-	group:   menutype
-	timeout: 5s
+	jwt:      Auth
+	authType: Bearer
+	prefix:   /central/v1
+	group:    menutype
+	timeout:  5s
 )
 service HappyEatService {
 	@doc "列出菜单种类"
@@ -70,10 +88,11 @@ service HappyEatService {
 }
 
 @server (
-	jwt:     Auth
-	prefix:  /central/v1
-	group:   table
-	timeout: 5s
+	jwt:      Auth
+	authType: Bearer
+	prefix:   /central/v1
+	group:    table
+	timeout:  5s
 )
 service HappyEatService {
 	@doc "列出餐桌"
@@ -98,10 +117,11 @@ service HappyEatService {
 }
 
 @server (
-	jwt:     Auth
-	prefix:  /central/v1
-	group:   tablecategory
-	timeout: 5s
+	jwt:      Auth
+	authType: Bearer
+	prefix:   /central/v1
+	group:    tablecategory
+	timeout:  5s
 )
 service HappyEatService {
 	@doc "列出餐桌类别"
@@ -126,10 +146,11 @@ service HappyEatService {
 }
 
 @server (
-	jwt:     Auth
-	prefix:  /central/v1
-	group:   order
-	timeout: 5s
+	jwt:      Auth
+	authType: Bearer
+	prefix:   /central/v1
+	group:    order
+	timeout:  5s
 )
 service HappyEatService {
 	@doc "列出订单"
@@ -150,10 +171,11 @@ service HappyEatService {
 }
 
 @server (
-	jwt:     Auth
-	prefix:  /central/v1
-	group:   workbench
-	timeout: 5s
+	jwt:      Auth
+	authType: Bearer
+	prefix:   /central/v1
+	group:    workbench
+	timeout:  5s
 )
 service HappyEatService {
 	@doc "工作台订单列表（默认待处理：created/paid/preparing）；出单用 更新订单状态 置为 completed"

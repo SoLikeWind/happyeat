@@ -9,11 +9,11 @@ info (
 import "../base/orderbase.api"
 
 type ListOrdersReq {
-	Current   uint64 `json:"current"`
-	PageSize  uint64 `json:"pageSize"`
-	Status    string `json:"status,optional"`
-	OrderType string `json:"order_type,optional"` // dine_in | takeaway
-	TableId   uint64 `json:"table_id,optional"`   // 按餐桌筛选
+	Current   uint64 `json:"current,optional" form:"current,optional"`
+	PageSize  uint64 `json:"pageSize,optional" form:"pageSize,optional"`
+	Status    string `json:"status,optional" form:"status"`
+	OrderType string `json:"order_type,optional" form:"order_type"` // dine_in | takeaway
+	TableId   uint64 `json:"table_id,optional" form:"table_id"`     // 按餐桌筛选
 }
 type ListOrdersReply {
 	Orders []Order `json:"orders"`

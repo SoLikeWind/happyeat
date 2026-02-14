@@ -26,12 +26,16 @@ func main() {
 	conf.MustLoad(*configFile, &c)
 
 	server := rest.MustNewServer(c.RestConf, rest.WithCustomCors(
-		func(header http.Header) {
-			header.Set("Access-Control-Allow-Origin", "*")
-			header.Add("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			header.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-			header.Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
-		}, nil, "*"))
+		func(h http.Header) {
+			h.Set("Access-Control-Allow-Origin", "*")
+			h.Add("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+			h.Set("Access-Control-Expose-Headers", "Content-Length, Content-Type")
+		},
+		func(w http.ResponseWriter) {
+			w.WriteHeader(http.StatusForbidden)
+			w.Write([]byte(`{"error": "CORS 拒绝"}`))
+		}, "*"))
 	defer server.Stop()
 
 	ctx, err := svc.NewServiceContext(c)

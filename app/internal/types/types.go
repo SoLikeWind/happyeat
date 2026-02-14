@@ -160,9 +160,9 @@ type ListOrdersReply struct {
 type ListOrdersReq struct {
 	Current   int64  `json:"current,optional" form:"current,optional"`
 	PageSize  int64  `json:"pageSize,optional" form:"pageSize,optional"`
-	Status    string `json:"status,optional" form:"status"`
-	OrderType string `json:"order_type,optional" form:"order_type"` // dine_in | takeaway
-	TableId   uint64 `json:"table_id,optional" form:"table_id"`     // 按餐桌筛选
+	Status    string `json:"status,optional" form:"status,optional"`
+	OrderType string `json:"order_type,optional" form:"order_type,optional"` // dine_in | takeaway
+	TableId   uint64 `json:"table_id,optional" form:"table_id,optional"`     // 按餐桌筛选
 }
 
 type ListTableCategoriesReply struct {
@@ -184,9 +184,9 @@ type ListTablesReply struct {
 type ListTablesReq struct {
 	Current  int64  `json:"current,optional" form:"current,optional"`
 	PageSize int64  `json:"pageSize,optional" form:"pageSize,optional"`
-	Code     string `json:"code,optional" form:"code"`
-	Status   string `json:"status,optional" form:"status"`
-	Category string `json:"category,optional" form:"category"` // 按分类名字筛选
+	Code     string `json:"code,optional" form:"code,optional"`
+	Status   string `json:"status,optional" form:"status,optional"`
+	Category string `json:"category,optional" form:"category,optional"` // 按分类名字筛选
 }
 
 type ListWorkbenchOrdersReply struct {

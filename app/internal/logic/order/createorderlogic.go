@@ -36,9 +36,6 @@ func (l *CreateOrderLogic) CreateOrder(req *types.CreateOrderReq) (*types.Create
 	if req.OrderType != "dine_in" && req.OrderType != "takeaway" {
 		return nil, errors.New("order_type 应为 dine_in 或 takeaway")
 	}
-	if req.OrderType == "dine_in" && req.TableId <= 0 {
-		return nil, errors.New("堂食订单必须关联餐桌")
-	}
 
 	items := make([]orderdata.ItemInput, 0, len(req.Items))
 	for _, it := range req.Items {

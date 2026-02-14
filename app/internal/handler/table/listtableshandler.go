@@ -25,8 +25,11 @@ func ListTablesHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		resp, err := l.ListTables(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
+			return
 		}
+		if resp == nil {
+			resp = &types.ListTablesReply{Tables: []types.Table{}, Total: 0}
+		}
+		httpx.OkJsonCtx(r.Context(), w, resp)
 	}
 }

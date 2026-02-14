@@ -12,9 +12,9 @@ import "../base/tablebase.api"
 type ListTablesReq {
 	Current  int64 `json:"current,optional" form:"current,optional"`
 	PageSize int64 `json:"pageSize,optional" form:"pageSize,optional"`
-	Code     string `json:"code,optional" form:"code"`
-	Status   string `json:"status,optional" form:"status"`
-	Category string `json:"category,optional" form:"category"` // 按分类名字筛选
+	Code     string `json:"code,optional" form:"code,optional"`
+	Status   string `json:"status,optional" form:"status,optional"`
+	Category string `json:"category,optional" form:"category,optional"` // 按分类名字筛选
 }
 type ListTablesReply {
 	Tables []Table `json:"tables"`

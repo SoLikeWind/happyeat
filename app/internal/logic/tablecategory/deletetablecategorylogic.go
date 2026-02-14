@@ -28,7 +28,9 @@ func NewDeleteTableCategoryLogic(ctx context.Context, svcCtx *svc.ServiceContext
 }
 
 func (l *DeleteTableCategoryLogic) DeleteTableCategory(req *types.DeleteTableCategoryReq) (resp *types.DeleteTableCategoryReply, err error) {
-	// todo: add your logic here and delete this line
-
-	return
+	if err = l.svcCtx.TableType.Delete(l.ctx, int(req.Id)); err != nil {
+		l.Errorf("DeleteTableCategory err: %v", err)
+		return nil, err
+	}
+	return &types.DeleteTableCategoryReply{}, nil
 }

@@ -85,6 +85,7 @@ var PermissionRules = map[string][]PolicyRule{
 		{Obj: "/central/v1/iam/users/:id", Act: "DELETE"},
 		{Obj: "/central/v1/iam/user-roles", Act: "POST"},
 		{Obj: "/central/v1/iam/user-roles", Act: "DELETE"},
+		{Obj: "/central/v1/iam/users/:id/reset-password", Act: "POST"},
 	},
 	"workbench:view":       {{Obj: "/central/v1/workbench/orders", Act: "GET"}},
 	"workbench:complete":   {{Obj: "/central/v1/order/:id/status", Act: "PUT"}},

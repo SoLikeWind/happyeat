@@ -43,17 +43,8 @@ func (l *ListIAMUsersLogic) ListIAMUsers(req *types.ListIAMUsersReq) (resp *type
 		return nil, err
 	}
 	items := make([]types.IAMUserItem, 0, len(rows))
-	for _, row := range rows {
-		roles := row.Roles
-		if roles == nil {
-			roles = []string{}
-		}
-		items = append(items, types.IAMUserItem{
-			Id:          row.ID,
-			UserCode:    row.UserCode,
-			DisplayName: row.DisplayName,
-			Roles:       roles,
-		})
+	for i := range rows {
+		items = append(items, toUserItem(l.ctx, l.svcCtx, &rows[i]))
 	}
 	return &types.ListIAMUsersReply{
 		Users: items,

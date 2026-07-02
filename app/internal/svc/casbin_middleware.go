@@ -24,6 +24,12 @@ func NewCasbinMiddleware(svcCtx *ServiceContext) rest.Middleware {
 				return
 			}
 
+			// 自助接口（/iam/me 等）：已登录即放行，不做 Casbin 策略校验。
+			if routenorm.IsSelfServicePath(r.URL.Path) {
+				next(w, r)
+				return
+			}
+
 			obj := routenorm.EnforceObj(r.URL.Path)
 			act := strings.ToUpper(r.Method)
 			ok, err := svcCtx.Casbin.Enforcer.Enforce(sub, obj, act)

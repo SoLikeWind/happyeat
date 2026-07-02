@@ -37,8 +37,22 @@ func (IAMUser) Fields() []ent.Field {
 			Immutable().
 			Comment("用户编码"),
 		field.String("display_name").
+			NotEmpty().
+			Comment("用户名"),
+		field.String("phone").
+			NotEmpty().
+			Unique().
+			Comment("登录手机号（唯一；作为登录账号，可变）"),
+		field.String("password_hash").
+			NotEmpty().
+			Sensitive().
+			Comment("登录密码 bcrypt 哈希"),
+		field.Uint64("avatar_object_id").
+			Default(0).
+			Comment("头像对象 ID（引用 objects.id，0 表示无）"),
+		field.String("avatar_url").
 			Default("").
-			Comment("展示名"),
+			Comment("头像访问 URL 快照（私有桶读取时重签）"),
 	}
 }
 

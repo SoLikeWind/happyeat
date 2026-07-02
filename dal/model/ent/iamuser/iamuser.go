@@ -25,6 +25,14 @@ const (
 	FieldUserCode = "user_code"
 	// FieldDisplayName holds the string denoting the display_name field in the database.
 	FieldDisplayName = "display_name"
+	// FieldPhone holds the string denoting the phone field in the database.
+	FieldPhone = "phone"
+	// FieldPasswordHash holds the string denoting the password_hash field in the database.
+	FieldPasswordHash = "password_hash"
+	// FieldAvatarObjectID holds the string denoting the avatar_object_id field in the database.
+	FieldAvatarObjectID = "avatar_object_id"
+	// FieldAvatarURL holds the string denoting the avatar_url field in the database.
+	FieldAvatarURL = "avatar_url"
 	// EdgeRoles holds the string denoting the roles edge name in mutations.
 	EdgeRoles = "roles"
 	// Table holds the table name of the iamuser in the database.
@@ -44,6 +52,10 @@ var Columns = []string{
 	FieldDeleteTs,
 	FieldUserCode,
 	FieldDisplayName,
+	FieldPhone,
+	FieldPasswordHash,
+	FieldAvatarObjectID,
+	FieldAvatarURL,
 }
 
 var (
@@ -80,8 +92,16 @@ var (
 	DefaultDeleteTs int64
 	// UserCodeValidator is a validator for the "user_code" field. It is called by the builders before save.
 	UserCodeValidator func(string) error
-	// DefaultDisplayName holds the default value on creation for the "display_name" field.
-	DefaultDisplayName string
+	// DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
+	DisplayNameValidator func(string) error
+	// PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
+	PhoneValidator func(string) error
+	// PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
+	PasswordHashValidator func(string) error
+	// DefaultAvatarObjectID holds the default value on creation for the "avatar_object_id" field.
+	DefaultAvatarObjectID uint64
+	// DefaultAvatarURL holds the default value on creation for the "avatar_url" field.
+	DefaultAvatarURL string
 )
 
 // OrderOption defines the ordering options for the IAMUser queries.
@@ -115,6 +135,26 @@ func ByUserCode(opts ...sql.OrderTermOption) OrderOption {
 // ByDisplayName orders the results by the display_name field.
 func ByDisplayName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDisplayName, opts...).ToFunc()
+}
+
+// ByPhone orders the results by the phone field.
+func ByPhone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPhone, opts...).ToFunc()
+}
+
+// ByPasswordHash orders the results by the password_hash field.
+func ByPasswordHash(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPasswordHash, opts...).ToFunc()
+}
+
+// ByAvatarObjectID orders the results by the avatar_object_id field.
+func ByAvatarObjectID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAvatarObjectID, opts...).ToFunc()
+}
+
+// ByAvatarURL orders the results by the avatar_url field.
+func ByAvatarURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAvatarURL, opts...).ToFunc()
 }
 
 // ByRolesCount orders the results by roles count.

@@ -31,6 +31,16 @@ func (l *DeleteIAMUserLogic) DeleteIAMUser(req *types.DeleteIAMUserReq) (resp *t
 	if req.Id == 0 {
 		return nil, errInvalid("id 不能为空")
 	}
+	detail, err := l.svcCtx.Rbac.GetUserDetailByID(req.Id)
+	if err != nil {
+		return nil, errInvalid(err.Error())
+	}
+	if detail.UserCode == "dev-admin" {
+		return nil, errInvalid("内置超级管理员账号不可删除")
+	}
+	if detail.UserCode == currentUserCode(l.ctx) {
+		return nil, errInvalid("不能删除当前登录账号")
+	}
 	if err := l.svcCtx.Rbac.DeleteUserByID(req.Id); err != nil {
 		return nil, errInvalid(err.Error())
 	}

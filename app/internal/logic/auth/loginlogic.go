@@ -6,6 +6,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"regexp"
 	"strings"
 	"time"
 
@@ -16,9 +17,10 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// 开发环境默认账号（仅用于 Swagger/联调，生产应改为真实登录或配置）
+// devUsername 开发态内置超管：用户名 admin 映射到 user_code=dev-admin（密码存库，默认 admin123）。
 const devUsername = "admin"
-const devPassword = "admin123"
+
+var phoneRe = regexp.MustCompile(`^1[3-9]\d{9}$`)
 
 type LoginLogic struct {
 	logx.Logger
@@ -47,22 +49,26 @@ func loginUserCode(username string) string {
 }
 
 func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginReply, error) {
-	if req.Password != devPassword {
-		return nil, errors.New("用户名或密码错误")
-	}
-	userCode := loginUserCode(req.Username)
-	if userCode == "" {
+	username := strings.TrimSpace(req.Username)
+	if username == "" {
 		return nil, errors.New("用户名不能为空")
 	}
-	roles, err := l.svcCtx.Rbac.GetUserRoleCodes(userCode)
-	if err != nil {
-		return nil, errors.New("用户名或密码错误")
-	}
-	if len(roles) == 0 {
-		return nil, errors.New("该用户未分配角色，请联系管理员")
-	}
-	primaryRole := roles[0]
 
+	// 账号即手机号：11 位手机号走手机号登录，其它（如 admin）走 user_code 兼容登录。
+	var (
+		user *svc.LoginUser
+		err  error
+	)
+	if phoneRe.MatchString(username) {
+		user, err = l.svcCtx.Rbac.AuthenticateByPhone(username, req.Password)
+	} else {
+		user, err = l.svcCtx.Rbac.AuthenticateByUserCode(loginUserCode(username), req.Password)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	primaryRole := user.Roles[0]
 	secret := l.svcCtx.Config.Auth.AccessSecret
 	expire := l.svcCtx.Config.Auth.AccessExpire
 	if expire <= 0 {
@@ -71,14 +77,14 @@ func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginReply, error) {
 	iat := time.Now().Unix()
 	exp := iat + expire
 
-	// user_code：Casbin 主体；role：非标准 claim，供前端解析（go-zero 会写入 context，与 Casbin 的 g 策略无关）
+	// user_code：Casbin 主体；role：非标准 claim，供前端解析。
 	claims := jwt.MapClaims{
-		"exp":        exp,
-		"iat":        iat,
-		"sub":        userCode,
-		"user_code": userCode,
-		"role":       primaryRole,
-		"roles":      roles,
+		"exp":       exp,
+		"iat":       iat,
+		"sub":       user.UserCode,
+		"user_code": user.UserCode,
+		"role":      primaryRole,
+		"roles":     user.Roles,
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte(secret))
@@ -89,8 +95,8 @@ func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginReply, error) {
 	return &types.LoginReply{
 		AccessToken: tokenStr,
 		Expire:      exp,
-		UserCode:    userCode,
+		UserCode:    user.UserCode,
 		Role:        primaryRole,
-		Roles:       roles,
+		Roles:       user.Roles,
 	}, nil
 }

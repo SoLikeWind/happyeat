@@ -37,7 +37,7 @@ type ListIAMRolesReply {
 
 type ListIAMUsersReq {
 	PageInfo
-	Keyword string `json:"keyword,optional" form:"keyword,optional"` // 可选：user_code / display_name
+	Keyword string `json:"keyword,optional" form:"keyword,optional"` // 可选：user_code / display_name / phone
 }
 
 type ListIAMUsersReply {
@@ -81,7 +81,7 @@ type CreateIAMRoleReq {
 }
 
 type CreateIAMRoleReply {
-	Id uint64 `json:"id"`
+	Id uint64 `json:"id,string"`
 }
 
 type GetIAMRoleReq {
@@ -110,12 +110,16 @@ type DeleteIAMRoleReply {
 // ---------- 用户 CRUD（user_code 创建后不可改，与 JWT sub 对齐）----------
 
 type CreateIAMUserReq {
-	UserCode    string `json:"user_code"`
-	DisplayName string `json:"display_name,optional"`
+	UserCode       string   `json:"user_code,optional"` // 可选：留空自动取手机号
+	DisplayName    string   `json:"display_name"`
+	Phone          string   `json:"phone"` // 登录账号
+	Password       string   `json:"password"`
+	Roles          []string `json:"roles,optional"`                   // 可选：创建后一次性绑定角色码
+	AvatarObjectId uint64   `json:"avatar_object_id,optional,string"` // 可选：头像对象 ID
 }
 
 type CreateIAMUserReply {
-	Id uint64 `json:"id"`
+	Id uint64 `json:"id,string"`
 }
 
 type GetIAMUserReq {
@@ -127,8 +131,10 @@ type GetIAMUserReply {
 }
 
 type UpdateIAMUserReq {
-	Id          uint64 `path:"id"`
-	DisplayName string `json:"display_name"`
+	Id             uint64 `path:"id"`
+	DisplayName    string `json:"display_name,optional"`
+	Phone          string `json:"phone,optional"`
+	AvatarObjectId uint64 `json:"avatar_object_id,optional,string"`
 }
 
 type UpdateIAMUserReply {
@@ -139,4 +145,36 @@ type DeleteIAMUserReq {
 }
 
 type DeleteIAMUserReply {
+}
+
+// ---------- 管理员重置用户密码 ----------
+
+type ResetIAMUserPasswordReq {
+	Id       uint64 `path:"id"`
+	Password string `json:"password"`
+}
+
+type ResetIAMUserPasswordReply {
+}
+
+// ---------- 当前登录用户（自助资料/头像/改密）----------
+
+type GetMeReply {
+	User IAMUserItem `json:"user"`
+}
+
+type UpdateMeReq {
+	DisplayName    string `json:"display_name,optional"`
+	AvatarObjectId uint64 `json:"avatar_object_id,optional,string"`
+}
+
+type UpdateMeReply {
+}
+
+type ChangeMyPasswordReq {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
+type ChangeMyPasswordReply {
 }

@@ -32,6 +32,14 @@ type CategorySpec struct {
 	UpdatedAt  string `json:"updated_at"`
 }
 
+type ChangeMyPasswordReply struct {
+}
+
+type ChangeMyPasswordReq struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
 type CreateCategorySpecReply struct {
 }
 
@@ -45,7 +53,7 @@ type CreateCategorySpecReq struct {
 }
 
 type CreateIAMRoleReply struct {
-	Id uint64 `json:"id"`
+	Id uint64 `json:"id,string"`
 }
 
 type CreateIAMRoleReq struct {
@@ -55,12 +63,16 @@ type CreateIAMRoleReq struct {
 }
 
 type CreateIAMUserReply struct {
-	Id uint64 `json:"id"`
+	Id uint64 `json:"id,string"`
 }
 
 type CreateIAMUserReq struct {
-	UserCode    string `json:"user_code"`
-	DisplayName string `json:"display_name,optional"`
+	UserCode       string   `json:"user_code,optional"` // 可选：留空自动取手机号
+	DisplayName    string   `json:"display_name"`
+	Phone          string   `json:"phone"` // 登录账号
+	Password       string   `json:"password"`
+	Roles          []string `json:"roles,optional"`                   // 可选：创建后一次性绑定角色码
+	AvatarObjectId uint64   `json:"avatar_object_id,optional,string"` // 可选：头像对象 ID
 }
 
 type CreateMenuCategoryReply struct {
@@ -161,7 +173,7 @@ type DailyStatsPoint struct {
 	OrderCount    int    `json:"order_count"`
 	Revenue       int64  `json:"revenue"`        // 实收合计（分）
 	Receivable    int64  `json:"receivable"`     // 应收合计（分）
-	ActualRevenue int64  `json:"actual_revenue"` // 实收合计（分）
+	ActualRevenue int64  `json:"actual_revenue"` // 实收合计（分，与 revenue 一致）
 	ItemCount     int    `json:"item_count"`
 	DineInCount   int    `json:"dine_in_count,optional"`
 	TakeawayCount int    `json:"takeaway_count,optional"`
@@ -216,6 +228,13 @@ type DeleteObjectReply struct {
 }
 
 type DeleteObjectReq struct {
+	Id uint64 `path:"id"`
+}
+
+type DeleteSettlementReply struct {
+}
+
+type DeleteSettlementReq struct {
 	Id uint64 `path:"id"`
 }
 
@@ -277,6 +296,10 @@ type GetIAMUserReply struct {
 
 type GetIAMUserReq struct {
 	Id uint64 `path:"id"`
+}
+
+type GetMeReply struct {
+	User IAMUserItem `json:"user"`
 }
 
 type GetMenuCategoryReply struct {
@@ -369,16 +392,20 @@ type GetTableReq struct {
 }
 
 type IAMRoleItem struct {
-	Id       uint64 `json:"id"`
+	Id       uint64 `json:"id,string"`
 	RoleCode string `json:"role_code"`
 	RoleName string `json:"role_name"`
 }
 
 type IAMUserItem struct {
-	Id          uint64   `json:"id"`
-	UserCode    string   `json:"user_code"`
-	DisplayName string   `json:"display_name"`
-	Roles       []string `json:"roles"`
+	Id             uint64   `json:"id,string"`
+	UserCode       string   `json:"user_code"`
+	DisplayName    string   `json:"display_name"`
+	Phone          string   `json:"phone"`
+	Roles          []string `json:"roles"`
+	AvatarObjectId uint64   `json:"avatar_object_id,string"`
+	AvatarUrl      string   `json:"avatar_url"`
+	HasPassword    bool     `json:"has_password"`
 }
 
 type ListCategorySpecReply struct {
@@ -429,7 +456,7 @@ type ListIAMUsersReply struct {
 
 type ListIAMUsersReq struct {
 	PageInfo
-	Keyword string `json:"keyword,optional" form:"keyword,optional"` // 可选：user_code / display_name
+	Keyword string `json:"keyword,optional" form:"keyword,optional"` // 可选：user_code / display_name / phone
 }
 
 type ListMenuCategoryReply struct {
@@ -621,21 +648,21 @@ type Object struct {
 }
 
 type Order struct {
-	Id            uint64      `json:"id,string"`                      // 订单id
-	OrderNo       string      `json:"order_no"`                       // 订单号
-	OrderType     string      `json:"order_type"`                     // dine_in=堂食 takeaway=打包外带
-	Status        string      `json:"status"`                         // CREATED/PAID/PREPARING/COMPLETED/CANCELLED（与存库一致）
-	TotalAmount   int64       `json:"total_amount"`                   // 总金额（分，应收）
-	ActualAmount  int64       `json:"actual_amount"`                  // 实收金额（分）
-	TableId       uint64      `json:"table_id,optional,string"`       // 堂食时关联餐桌id
-	TableCode     string      `json:"table_code,optional"`            // 桌号（堂食时显示，外带为空）
-	TableCategory string      `json:"table_category,optional"`        // 餐桌类别（如大厅、包间）
-	Remark        string      `json:"remark,optional"`                // 备注
-	SettlementId  *uint64     `json:"settlement_id,omitempty,string"` // 所属结账单
-	Items         []OrderItem `json:"items,optional"`                 // 订单明细
-	DailySequence int         `json:"daily_sequence,optional"`        // 创建日内的顺序号（从 1 开始）
-	CreatedAt     string      `json:"created_at"`                     // 创建时间
-	UpdatedAt     string      `json:"updated_at"`                     // 更新时间
+	Id            uint64      `json:"id,string"`                     // 订单id
+	OrderNo       string      `json:"order_no"`                      // 订单号
+	OrderType     string      `json:"order_type"`                    // dine_in=堂食 takeaway=打包外带
+	Status        string      `json:"status"`                        // CREATED/PAID/PREPARING/COMPLETED/CANCELLED（与存库一致）
+	TotalAmount   int64       `json:"total_amount"`                  // 总金额（分，应收）
+	ActualAmount  int64       `json:"actual_amount"`                 // 实收金额（分）
+	TableId       uint64      `json:"table_id,optional,string"`      // 堂食时关联餐桌id
+	TableCode     string      `json:"table_code,optional"`           // 桌号（堂食时显示，外带为空）
+	TableCategory string      `json:"table_category,optional"`       // 餐桌类别（如大厅、包间）
+	Remark        string      `json:"remark,optional"`               // 备注
+	SettlementId  uint64      `json:"settlement_id,optional,string"` // 所属结账单
+	Items         []OrderItem `json:"items,optional"`                // 订单明细
+	DailySequence int         `json:"daily_sequence,optional"`       // 创建日内的顺序号（从 1 开始）
+	CreatedAt     string      `json:"created_at"`                    // 创建时间
+	UpdatedAt     string      `json:"updated_at"`                    // 更新时间
 }
 
 type OrderItem struct {
@@ -664,7 +691,7 @@ type PermissionEndpoint struct {
 }
 
 type PermissionItem struct {
-	Id          uint64 `json:"id"`
+	Id          uint64 `json:"id,string"`
 	Code        string `json:"code"`
 	Description string `json:"description"`
 }
@@ -684,13 +711,6 @@ type RemoveIAMUserRoleReq struct {
 	RoleCode string `json:"role_code,optional" form:"role_code"`
 }
 
-type DeleteSettlementReply struct {
-}
-
-type DeleteSettlementReq struct {
-	Id uint64 `path:"id"`
-}
-
 type RemoveSettlementOrderReply struct {
 	Settlement Settlement `json:"settlement"`
 }
@@ -698,6 +718,14 @@ type RemoveSettlementOrderReply struct {
 type RemoveSettlementOrderReq struct {
 	Id      uint64 `path:"id"`
 	OrderId uint64 `path:"order_id"`
+}
+
+type ResetIAMUserPasswordReply struct {
+}
+
+type ResetIAMUserPasswordReq struct {
+	Id       uint64 `path:"id"`
+	Password string `json:"password"`
 }
 
 type ResetRolePermissionsReply struct {
@@ -804,8 +832,18 @@ type UpdateIAMUserReply struct {
 }
 
 type UpdateIAMUserReq struct {
-	Id          uint64 `path:"id"`
-	DisplayName string `json:"display_name"`
+	Id             uint64 `path:"id"`
+	DisplayName    string `json:"display_name,optional"`
+	Phone          string `json:"phone,optional"`
+	AvatarObjectId uint64 `json:"avatar_object_id,optional,string"`
+}
+
+type UpdateMeReply struct {
+}
+
+type UpdateMeReq struct {
+	DisplayName    string `json:"display_name,optional"`
+	AvatarObjectId uint64 `json:"avatar_object_id,optional,string"`
 }
 
 type UpdateMenuCategoryReply struct {

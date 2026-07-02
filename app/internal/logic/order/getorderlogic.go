@@ -56,8 +56,7 @@ func EntOrderToType(e *ent.Order, dailySequence int) types.Order {
 		out.Remark = *e.Remark
 	}
 	if e.SettlementID != nil && *e.SettlementID > 0 {
-		sid := *e.SettlementID
-		out.SettlementId = &sid
+		out.SettlementId = *e.SettlementID
 	}
 
 	tbl, _ := e.Edges.TableOrErr()

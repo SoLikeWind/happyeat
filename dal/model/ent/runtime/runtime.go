@@ -173,8 +173,24 @@ func init() {
 	iamuser.UserCodeValidator = iamuserDescUserCode.Validators[0].(func(string) error)
 	// iamuserDescDisplayName is the schema descriptor for display_name field.
 	iamuserDescDisplayName := iamuserFields[1].Descriptor()
-	// iamuser.DefaultDisplayName holds the default value on creation for the display_name field.
-	iamuser.DefaultDisplayName = iamuserDescDisplayName.Default.(string)
+	// iamuser.DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
+	iamuser.DisplayNameValidator = iamuserDescDisplayName.Validators[0].(func(string) error)
+	// iamuserDescPhone is the schema descriptor for phone field.
+	iamuserDescPhone := iamuserFields[2].Descriptor()
+	// iamuser.PhoneValidator is a validator for the "phone" field. It is called by the builders before save.
+	iamuser.PhoneValidator = iamuserDescPhone.Validators[0].(func(string) error)
+	// iamuserDescPasswordHash is the schema descriptor for password_hash field.
+	iamuserDescPasswordHash := iamuserFields[3].Descriptor()
+	// iamuser.PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
+	iamuser.PasswordHashValidator = iamuserDescPasswordHash.Validators[0].(func(string) error)
+	// iamuserDescAvatarObjectID is the schema descriptor for avatar_object_id field.
+	iamuserDescAvatarObjectID := iamuserFields[4].Descriptor()
+	// iamuser.DefaultAvatarObjectID holds the default value on creation for the avatar_object_id field.
+	iamuser.DefaultAvatarObjectID = iamuserDescAvatarObjectID.Default.(uint64)
+	// iamuserDescAvatarURL is the schema descriptor for avatar_url field.
+	iamuserDescAvatarURL := iamuserFields[5].Descriptor()
+	// iamuser.DefaultAvatarURL holds the default value on creation for the avatar_url field.
+	iamuser.DefaultAvatarURL = iamuserDescAvatarURL.Default.(string)
 	menuMixin := schema.Menu{}.Mixin()
 	menuMixinHooks0 := menuMixin[0].Hooks()
 	menuMixinHooks2 := menuMixin[2].Hooks()

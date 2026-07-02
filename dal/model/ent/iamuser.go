@@ -26,8 +26,16 @@ type IAMUser struct {
 	DeleteTs int64 `json:"delete_ts,omitempty"`
 	// 用户编码
 	UserCode string `json:"user_code,omitempty"`
-	// 展示名
+	// 用户名
 	DisplayName string `json:"display_name,omitempty"`
+	// 登录手机号（唯一；作为登录账号，可变）
+	Phone string `json:"phone,omitempty"`
+	// 登录密码 bcrypt 哈希
+	PasswordHash string `json:"-"`
+	// 头像对象 ID（引用 objects.id，0 表示无）
+	AvatarObjectID uint64 `json:"avatar_object_id,omitempty"`
+	// 头像访问 URL 快照（私有桶读取时重签）
+	AvatarURL string `json:"avatar_url,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the IAMUserQuery when eager-loading is set.
 	Edges        IAMUserEdges `json:"edges"`
@@ -57,9 +65,9 @@ func (*IAMUser) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case iamuser.FieldID, iamuser.FieldDeleteTs:
+		case iamuser.FieldID, iamuser.FieldDeleteTs, iamuser.FieldAvatarObjectID:
 			values[i] = new(sql.NullInt64)
-		case iamuser.FieldUserCode, iamuser.FieldDisplayName:
+		case iamuser.FieldUserCode, iamuser.FieldDisplayName, iamuser.FieldPhone, iamuser.FieldPasswordHash, iamuser.FieldAvatarURL:
 			values[i] = new(sql.NullString)
 		case iamuser.FieldCreatedAt, iamuser.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -113,6 +121,30 @@ func (_m *IAMUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field display_name", values[i])
 			} else if value.Valid {
 				_m.DisplayName = value.String
+			}
+		case iamuser.FieldPhone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field phone", values[i])
+			} else if value.Valid {
+				_m.Phone = value.String
+			}
+		case iamuser.FieldPasswordHash:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field password_hash", values[i])
+			} else if value.Valid {
+				_m.PasswordHash = value.String
+			}
+		case iamuser.FieldAvatarObjectID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field avatar_object_id", values[i])
+			} else if value.Valid {
+				_m.AvatarObjectID = uint64(value.Int64)
+			}
+		case iamuser.FieldAvatarURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field avatar_url", values[i])
+			} else if value.Valid {
+				_m.AvatarURL = value.String
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -169,6 +201,17 @@ func (_m *IAMUser) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("display_name=")
 	builder.WriteString(_m.DisplayName)
+	builder.WriteString(", ")
+	builder.WriteString("phone=")
+	builder.WriteString(_m.Phone)
+	builder.WriteString(", ")
+	builder.WriteString("password_hash=<sensitive>")
+	builder.WriteString(", ")
+	builder.WriteString("avatar_object_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AvatarObjectID))
+	builder.WriteString(", ")
+	builder.WriteString("avatar_url=")
+	builder.WriteString(_m.AvatarURL)
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -75,10 +75,42 @@ func (_c *IAMUserCreate) SetDisplayName(v string) *IAMUserCreate {
 	return _c
 }
 
-// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
-func (_c *IAMUserCreate) SetNillableDisplayName(v *string) *IAMUserCreate {
+// SetPhone sets the "phone" field.
+func (_c *IAMUserCreate) SetPhone(v string) *IAMUserCreate {
+	_c.mutation.SetPhone(v)
+	return _c
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (_c *IAMUserCreate) SetPasswordHash(v string) *IAMUserCreate {
+	_c.mutation.SetPasswordHash(v)
+	return _c
+}
+
+// SetAvatarObjectID sets the "avatar_object_id" field.
+func (_c *IAMUserCreate) SetAvatarObjectID(v uint64) *IAMUserCreate {
+	_c.mutation.SetAvatarObjectID(v)
+	return _c
+}
+
+// SetNillableAvatarObjectID sets the "avatar_object_id" field if the given value is not nil.
+func (_c *IAMUserCreate) SetNillableAvatarObjectID(v *uint64) *IAMUserCreate {
 	if v != nil {
-		_c.SetDisplayName(*v)
+		_c.SetAvatarObjectID(*v)
+	}
+	return _c
+}
+
+// SetAvatarURL sets the "avatar_url" field.
+func (_c *IAMUserCreate) SetAvatarURL(v string) *IAMUserCreate {
+	_c.mutation.SetAvatarURL(v)
+	return _c
+}
+
+// SetNillableAvatarURL sets the "avatar_url" field if the given value is not nil.
+func (_c *IAMUserCreate) SetNillableAvatarURL(v *string) *IAMUserCreate {
+	if v != nil {
+		_c.SetAvatarURL(*v)
 	}
 	return _c
 }
@@ -159,9 +191,13 @@ func (_c *IAMUserCreate) defaults() error {
 		v := iamuser.DefaultDeleteTs
 		_c.mutation.SetDeleteTs(v)
 	}
-	if _, ok := _c.mutation.DisplayName(); !ok {
-		v := iamuser.DefaultDisplayName
-		_c.mutation.SetDisplayName(v)
+	if _, ok := _c.mutation.AvatarObjectID(); !ok {
+		v := iamuser.DefaultAvatarObjectID
+		_c.mutation.SetAvatarObjectID(v)
+	}
+	if _, ok := _c.mutation.AvatarURL(); !ok {
+		v := iamuser.DefaultAvatarURL
+		_c.mutation.SetAvatarURL(v)
 	}
 	return nil
 }
@@ -187,6 +223,33 @@ func (_c *IAMUserCreate) check() error {
 	}
 	if _, ok := _c.mutation.DisplayName(); !ok {
 		return &ValidationError{Name: "display_name", err: errors.New(`ent: missing required field "IAMUser.display_name"`)}
+	}
+	if v, ok := _c.mutation.DisplayName(); ok {
+		if err := iamuser.DisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "IAMUser.display_name": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Phone(); !ok {
+		return &ValidationError{Name: "phone", err: errors.New(`ent: missing required field "IAMUser.phone"`)}
+	}
+	if v, ok := _c.mutation.Phone(); ok {
+		if err := iamuser.PhoneValidator(v); err != nil {
+			return &ValidationError{Name: "phone", err: fmt.Errorf(`ent: validator failed for field "IAMUser.phone": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.PasswordHash(); !ok {
+		return &ValidationError{Name: "password_hash", err: errors.New(`ent: missing required field "IAMUser.password_hash"`)}
+	}
+	if v, ok := _c.mutation.PasswordHash(); ok {
+		if err := iamuser.PasswordHashValidator(v); err != nil {
+			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "IAMUser.password_hash": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.AvatarObjectID(); !ok {
+		return &ValidationError{Name: "avatar_object_id", err: errors.New(`ent: missing required field "IAMUser.avatar_object_id"`)}
+	}
+	if _, ok := _c.mutation.AvatarURL(); !ok {
+		return &ValidationError{Name: "avatar_url", err: errors.New(`ent: missing required field "IAMUser.avatar_url"`)}
 	}
 	return nil
 }
@@ -239,6 +302,22 @@ func (_c *IAMUserCreate) createSpec() (*IAMUser, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.DisplayName(); ok {
 		_spec.SetField(iamuser.FieldDisplayName, field.TypeString, value)
 		_node.DisplayName = value
+	}
+	if value, ok := _c.mutation.Phone(); ok {
+		_spec.SetField(iamuser.FieldPhone, field.TypeString, value)
+		_node.Phone = value
+	}
+	if value, ok := _c.mutation.PasswordHash(); ok {
+		_spec.SetField(iamuser.FieldPasswordHash, field.TypeString, value)
+		_node.PasswordHash = value
+	}
+	if value, ok := _c.mutation.AvatarObjectID(); ok {
+		_spec.SetField(iamuser.FieldAvatarObjectID, field.TypeUint64, value)
+		_node.AvatarObjectID = value
+	}
+	if value, ok := _c.mutation.AvatarURL(); ok {
+		_spec.SetField(iamuser.FieldAvatarURL, field.TypeString, value)
+		_node.AvatarURL = value
 	}
 	if nodes := _c.mutation.RolesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

@@ -387,6 +387,22 @@ service HappyEatService {
 	@doc "移除用户的某个角色；使用 query：?user_code=&role_code="
 	@handler RemoveIAMUserRole
 	delete /iam/user-roles (RemoveIAMUserRoleReq) returns (RemoveIAMUserRoleReply)
+
+	@doc "管理员重置用户密码"
+	@handler ResetIAMUserPassword
+	post /iam/users/:id/reset-password (ResetIAMUserPasswordReq) returns (ResetIAMUserPasswordReply)
+
+	@doc "获取当前登录用户资料（含头像、角色）"
+	@handler GetMe
+	get /iam/me returns (GetMeReply)
+
+	@doc "更新当前登录用户资料（展示名/头像）"
+	@handler UpdateMe
+	put /iam/me (UpdateMeReq) returns (UpdateMeReply)
+
+	@doc "当前登录用户修改密码"
+	@handler ChangeMyPassword
+	post /iam/me/password (ChangeMyPasswordReq) returns (ChangeMyPasswordReply)
 }
 
 @server (

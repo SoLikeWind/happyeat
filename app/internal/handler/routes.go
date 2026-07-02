@@ -43,6 +43,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			[]rest.Middleware{serverCtx.CasbinMiddleware},
 			[]rest.Route{
 				{
+					// 获取当前登录用户资料（含头像、角色）
+					Method:  http.MethodGet,
+					Path:    "/iam/me",
+					Handler: iam.GetMeHandler(serverCtx),
+				},
+				{
+					// 更新当前登录用户资料（展示名/头像）
+					Method:  http.MethodPut,
+					Path:    "/iam/me",
+					Handler: iam.UpdateMeHandler(serverCtx),
+				},
+				{
+					// 当前登录用户修改密码
+					Method:  http.MethodPost,
+					Path:    "/iam/me/password",
+					Handler: iam.ChangeMyPasswordHandler(serverCtx),
+				},
+				{
 					// 分页列出权限点（iam_permissions）
 					Method:  http.MethodGet,
 					Path:    "/iam/permissions",
@@ -125,6 +143,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Method:  http.MethodDelete,
 					Path:    "/iam/users/:id",
 					Handler: iam.DeleteIAMUserHandler(serverCtx),
+				},
+				{
+					// 管理员重置用户密码
+					Method:  http.MethodPost,
+					Path:    "/iam/users/:id/reset-password",
+					Handler: iam.ResetIAMUserPasswordHandler(serverCtx),
 				},
 			}...,
 		),
@@ -344,6 +368,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Handler: settlement.GetSettlementHandler(serverCtx),
 				},
 				{
+					// 删除结账单（仅未结账；关联订单自动解绑）
+					Method:  http.MethodDelete,
+					Path:    "/settlement/:id",
+					Handler: settlement.DeleteSettlementHandler(serverCtx),
+				},
+				{
 					// 将订单加入结账单（任意订单状态，已取消除外）
 					Method:  http.MethodPost,
 					Path:    "/settlement/:id/orders",
@@ -360,12 +390,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Method:  http.MethodPost,
 					Path:    "/settlement/:id/settle",
 					Handler: settlement.SettleSettlementHandler(serverCtx),
-				},
-				{
-					// 删除结账单（仅未结账）
-					Method:  http.MethodDelete,
-					Path:    "/settlement/:id",
-					Handler: settlement.DeleteSettlementHandler(serverCtx),
 				},
 				{
 					// 列出结账单

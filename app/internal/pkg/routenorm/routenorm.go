@@ -16,6 +16,19 @@ var (
 
 const rbacRolePermissionsPrefix = "/central/v1/rbac/role-permissions"
 
+// selfServicePaths 自助接口：已登录用户管理自己资料/头像/改密，无需 Casbin 授权。
+// Casbin 中间件放行、routecheck 跳过，二者共用此集合以保持一致。
+var selfServicePaths = map[string]struct{}{
+	"/central/v1/iam/me":          {},
+	"/central/v1/iam/me/password": {},
+}
+
+// IsSelfServicePath 判断是否为自助接口（仅需已登录，不做 Casbin 策略校验）。
+func IsSelfServicePath(path string) bool {
+	_, ok := selfServicePaths[strings.TrimRight(path, "/")]
+	return ok
+}
+
 // NormalizePath 将请求路径转为 Casbin obj：UUID 段替换为 /:id，并去掉尾部斜杠。
 func NormalizePath(path string) string {
 	normalized := idPathSegment.ReplaceAllString(path, "/:id")

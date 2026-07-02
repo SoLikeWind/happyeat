@@ -80,6 +80,26 @@ func DisplayName(v string) predicate.IAMUser {
 	return predicate.IAMUser(sql.FieldEQ(FieldDisplayName, v))
 }
 
+// Phone applies equality check predicate on the "phone" field. It's identical to PhoneEQ.
+func Phone(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldPhone, v))
+}
+
+// PasswordHash applies equality check predicate on the "password_hash" field. It's identical to PasswordHashEQ.
+func PasswordHash(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldPasswordHash, v))
+}
+
+// AvatarObjectID applies equality check predicate on the "avatar_object_id" field. It's identical to AvatarObjectIDEQ.
+func AvatarObjectID(v uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldAvatarObjectID, v))
+}
+
+// AvatarURL applies equality check predicate on the "avatar_url" field. It's identical to AvatarURLEQ.
+func AvatarURL(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldAvatarURL, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.IAMUser {
 	return predicate.IAMUser(sql.FieldEQ(FieldCreatedAt, v))
@@ -328,6 +348,241 @@ func DisplayNameEqualFold(v string) predicate.IAMUser {
 // DisplayNameContainsFold applies the ContainsFold predicate on the "display_name" field.
 func DisplayNameContainsFold(v string) predicate.IAMUser {
 	return predicate.IAMUser(sql.FieldContainsFold(FieldDisplayName, v))
+}
+
+// PhoneEQ applies the EQ predicate on the "phone" field.
+func PhoneEQ(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldPhone, v))
+}
+
+// PhoneNEQ applies the NEQ predicate on the "phone" field.
+func PhoneNEQ(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNEQ(FieldPhone, v))
+}
+
+// PhoneIn applies the In predicate on the "phone" field.
+func PhoneIn(vs ...string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldIn(FieldPhone, vs...))
+}
+
+// PhoneNotIn applies the NotIn predicate on the "phone" field.
+func PhoneNotIn(vs ...string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNotIn(FieldPhone, vs...))
+}
+
+// PhoneGT applies the GT predicate on the "phone" field.
+func PhoneGT(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGT(FieldPhone, v))
+}
+
+// PhoneGTE applies the GTE predicate on the "phone" field.
+func PhoneGTE(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGTE(FieldPhone, v))
+}
+
+// PhoneLT applies the LT predicate on the "phone" field.
+func PhoneLT(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLT(FieldPhone, v))
+}
+
+// PhoneLTE applies the LTE predicate on the "phone" field.
+func PhoneLTE(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLTE(FieldPhone, v))
+}
+
+// PhoneContains applies the Contains predicate on the "phone" field.
+func PhoneContains(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldContains(FieldPhone, v))
+}
+
+// PhoneHasPrefix applies the HasPrefix predicate on the "phone" field.
+func PhoneHasPrefix(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldHasPrefix(FieldPhone, v))
+}
+
+// PhoneHasSuffix applies the HasSuffix predicate on the "phone" field.
+func PhoneHasSuffix(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldHasSuffix(FieldPhone, v))
+}
+
+// PhoneEqualFold applies the EqualFold predicate on the "phone" field.
+func PhoneEqualFold(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEqualFold(FieldPhone, v))
+}
+
+// PhoneContainsFold applies the ContainsFold predicate on the "phone" field.
+func PhoneContainsFold(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldContainsFold(FieldPhone, v))
+}
+
+// PasswordHashEQ applies the EQ predicate on the "password_hash" field.
+func PasswordHashEQ(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldPasswordHash, v))
+}
+
+// PasswordHashNEQ applies the NEQ predicate on the "password_hash" field.
+func PasswordHashNEQ(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNEQ(FieldPasswordHash, v))
+}
+
+// PasswordHashIn applies the In predicate on the "password_hash" field.
+func PasswordHashIn(vs ...string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldIn(FieldPasswordHash, vs...))
+}
+
+// PasswordHashNotIn applies the NotIn predicate on the "password_hash" field.
+func PasswordHashNotIn(vs ...string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNotIn(FieldPasswordHash, vs...))
+}
+
+// PasswordHashGT applies the GT predicate on the "password_hash" field.
+func PasswordHashGT(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGT(FieldPasswordHash, v))
+}
+
+// PasswordHashGTE applies the GTE predicate on the "password_hash" field.
+func PasswordHashGTE(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGTE(FieldPasswordHash, v))
+}
+
+// PasswordHashLT applies the LT predicate on the "password_hash" field.
+func PasswordHashLT(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLT(FieldPasswordHash, v))
+}
+
+// PasswordHashLTE applies the LTE predicate on the "password_hash" field.
+func PasswordHashLTE(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLTE(FieldPasswordHash, v))
+}
+
+// PasswordHashContains applies the Contains predicate on the "password_hash" field.
+func PasswordHashContains(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldContains(FieldPasswordHash, v))
+}
+
+// PasswordHashHasPrefix applies the HasPrefix predicate on the "password_hash" field.
+func PasswordHashHasPrefix(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldHasPrefix(FieldPasswordHash, v))
+}
+
+// PasswordHashHasSuffix applies the HasSuffix predicate on the "password_hash" field.
+func PasswordHashHasSuffix(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldHasSuffix(FieldPasswordHash, v))
+}
+
+// PasswordHashEqualFold applies the EqualFold predicate on the "password_hash" field.
+func PasswordHashEqualFold(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEqualFold(FieldPasswordHash, v))
+}
+
+// PasswordHashContainsFold applies the ContainsFold predicate on the "password_hash" field.
+func PasswordHashContainsFold(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldContainsFold(FieldPasswordHash, v))
+}
+
+// AvatarObjectIDEQ applies the EQ predicate on the "avatar_object_id" field.
+func AvatarObjectIDEQ(v uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldAvatarObjectID, v))
+}
+
+// AvatarObjectIDNEQ applies the NEQ predicate on the "avatar_object_id" field.
+func AvatarObjectIDNEQ(v uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNEQ(FieldAvatarObjectID, v))
+}
+
+// AvatarObjectIDIn applies the In predicate on the "avatar_object_id" field.
+func AvatarObjectIDIn(vs ...uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldIn(FieldAvatarObjectID, vs...))
+}
+
+// AvatarObjectIDNotIn applies the NotIn predicate on the "avatar_object_id" field.
+func AvatarObjectIDNotIn(vs ...uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNotIn(FieldAvatarObjectID, vs...))
+}
+
+// AvatarObjectIDGT applies the GT predicate on the "avatar_object_id" field.
+func AvatarObjectIDGT(v uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGT(FieldAvatarObjectID, v))
+}
+
+// AvatarObjectIDGTE applies the GTE predicate on the "avatar_object_id" field.
+func AvatarObjectIDGTE(v uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGTE(FieldAvatarObjectID, v))
+}
+
+// AvatarObjectIDLT applies the LT predicate on the "avatar_object_id" field.
+func AvatarObjectIDLT(v uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLT(FieldAvatarObjectID, v))
+}
+
+// AvatarObjectIDLTE applies the LTE predicate on the "avatar_object_id" field.
+func AvatarObjectIDLTE(v uint64) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLTE(FieldAvatarObjectID, v))
+}
+
+// AvatarURLEQ applies the EQ predicate on the "avatar_url" field.
+func AvatarURLEQ(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEQ(FieldAvatarURL, v))
+}
+
+// AvatarURLNEQ applies the NEQ predicate on the "avatar_url" field.
+func AvatarURLNEQ(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNEQ(FieldAvatarURL, v))
+}
+
+// AvatarURLIn applies the In predicate on the "avatar_url" field.
+func AvatarURLIn(vs ...string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldIn(FieldAvatarURL, vs...))
+}
+
+// AvatarURLNotIn applies the NotIn predicate on the "avatar_url" field.
+func AvatarURLNotIn(vs ...string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldNotIn(FieldAvatarURL, vs...))
+}
+
+// AvatarURLGT applies the GT predicate on the "avatar_url" field.
+func AvatarURLGT(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGT(FieldAvatarURL, v))
+}
+
+// AvatarURLGTE applies the GTE predicate on the "avatar_url" field.
+func AvatarURLGTE(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldGTE(FieldAvatarURL, v))
+}
+
+// AvatarURLLT applies the LT predicate on the "avatar_url" field.
+func AvatarURLLT(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLT(FieldAvatarURL, v))
+}
+
+// AvatarURLLTE applies the LTE predicate on the "avatar_url" field.
+func AvatarURLLTE(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldLTE(FieldAvatarURL, v))
+}
+
+// AvatarURLContains applies the Contains predicate on the "avatar_url" field.
+func AvatarURLContains(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldContains(FieldAvatarURL, v))
+}
+
+// AvatarURLHasPrefix applies the HasPrefix predicate on the "avatar_url" field.
+func AvatarURLHasPrefix(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldHasPrefix(FieldAvatarURL, v))
+}
+
+// AvatarURLHasSuffix applies the HasSuffix predicate on the "avatar_url" field.
+func AvatarURLHasSuffix(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldHasSuffix(FieldAvatarURL, v))
+}
+
+// AvatarURLEqualFold applies the EqualFold predicate on the "avatar_url" field.
+func AvatarURLEqualFold(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldEqualFold(FieldAvatarURL, v))
+}
+
+// AvatarURLContainsFold applies the ContainsFold predicate on the "avatar_url" field.
+func AvatarURLContainsFold(v string) predicate.IAMUser {
+	return predicate.IAMUser(sql.FieldContainsFold(FieldAvatarURL, v))
 }
 
 // HasRoles applies the HasEdge predicate on the "roles" edge.

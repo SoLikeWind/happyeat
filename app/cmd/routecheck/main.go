@@ -56,6 +56,10 @@ func main() {
 
 	routeKeys := make(map[string]routeHit)
 	for _, r := range routes {
+		// 自助接口由 Casbin 中间件放行（仅需登录），不纳入 permission 规则一致性校验。
+		if routenorm.IsSelfServicePath(r.FullPath) {
+			continue
+		}
 		k := policyKey(r.FullPath, r.Method)
 		routeKeys[k] = routeHit{Method: r.Method, Path: r.FullPath, CanonKey: k}
 	}

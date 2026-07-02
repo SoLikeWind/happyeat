@@ -2582,22 +2582,27 @@ func (m *IAMRoleMutation) ResetEdge(name string) error {
 // IAMUserMutation represents an operation that mutates the IAMUser nodes in the graph.
 type IAMUserMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uint64
-	created_at    *time.Time
-	updated_at    *time.Time
-	delete_ts     *int64
-	adddelete_ts  *int64
-	user_code     *string
-	display_name  *string
-	clearedFields map[string]struct{}
-	roles         map[uint64]struct{}
-	removedroles  map[uint64]struct{}
-	clearedroles  bool
-	done          bool
-	oldValue      func(context.Context) (*IAMUser, error)
-	predicates    []predicate.IAMUser
+	op                  Op
+	typ                 string
+	id                  *uint64
+	created_at          *time.Time
+	updated_at          *time.Time
+	delete_ts           *int64
+	adddelete_ts        *int64
+	user_code           *string
+	display_name        *string
+	phone               *string
+	password_hash       *string
+	avatar_object_id    *uint64
+	addavatar_object_id *int64
+	avatar_url          *string
+	clearedFields       map[string]struct{}
+	roles               map[uint64]struct{}
+	removedroles        map[uint64]struct{}
+	clearedroles        bool
+	done                bool
+	oldValue            func(context.Context) (*IAMUser, error)
+	predicates          []predicate.IAMUser
 }
 
 var _ ent.Mutation = (*IAMUserMutation)(nil)
@@ -2904,6 +2909,170 @@ func (m *IAMUserMutation) ResetDisplayName() {
 	m.display_name = nil
 }
 
+// SetPhone sets the "phone" field.
+func (m *IAMUserMutation) SetPhone(s string) {
+	m.phone = &s
+}
+
+// Phone returns the value of the "phone" field in the mutation.
+func (m *IAMUserMutation) Phone() (r string, exists bool) {
+	v := m.phone
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPhone returns the old "phone" field's value of the IAMUser entity.
+// If the IAMUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IAMUserMutation) OldPhone(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPhone is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPhone requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPhone: %w", err)
+	}
+	return oldValue.Phone, nil
+}
+
+// ResetPhone resets all changes to the "phone" field.
+func (m *IAMUserMutation) ResetPhone() {
+	m.phone = nil
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (m *IAMUserMutation) SetPasswordHash(s string) {
+	m.password_hash = &s
+}
+
+// PasswordHash returns the value of the "password_hash" field in the mutation.
+func (m *IAMUserMutation) PasswordHash() (r string, exists bool) {
+	v := m.password_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPasswordHash returns the old "password_hash" field's value of the IAMUser entity.
+// If the IAMUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IAMUserMutation) OldPasswordHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPasswordHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPasswordHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPasswordHash: %w", err)
+	}
+	return oldValue.PasswordHash, nil
+}
+
+// ResetPasswordHash resets all changes to the "password_hash" field.
+func (m *IAMUserMutation) ResetPasswordHash() {
+	m.password_hash = nil
+}
+
+// SetAvatarObjectID sets the "avatar_object_id" field.
+func (m *IAMUserMutation) SetAvatarObjectID(u uint64) {
+	m.avatar_object_id = &u
+	m.addavatar_object_id = nil
+}
+
+// AvatarObjectID returns the value of the "avatar_object_id" field in the mutation.
+func (m *IAMUserMutation) AvatarObjectID() (r uint64, exists bool) {
+	v := m.avatar_object_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAvatarObjectID returns the old "avatar_object_id" field's value of the IAMUser entity.
+// If the IAMUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IAMUserMutation) OldAvatarObjectID(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAvatarObjectID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAvatarObjectID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAvatarObjectID: %w", err)
+	}
+	return oldValue.AvatarObjectID, nil
+}
+
+// AddAvatarObjectID adds u to the "avatar_object_id" field.
+func (m *IAMUserMutation) AddAvatarObjectID(u int64) {
+	if m.addavatar_object_id != nil {
+		*m.addavatar_object_id += u
+	} else {
+		m.addavatar_object_id = &u
+	}
+}
+
+// AddedAvatarObjectID returns the value that was added to the "avatar_object_id" field in this mutation.
+func (m *IAMUserMutation) AddedAvatarObjectID() (r int64, exists bool) {
+	v := m.addavatar_object_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetAvatarObjectID resets all changes to the "avatar_object_id" field.
+func (m *IAMUserMutation) ResetAvatarObjectID() {
+	m.avatar_object_id = nil
+	m.addavatar_object_id = nil
+}
+
+// SetAvatarURL sets the "avatar_url" field.
+func (m *IAMUserMutation) SetAvatarURL(s string) {
+	m.avatar_url = &s
+}
+
+// AvatarURL returns the value of the "avatar_url" field in the mutation.
+func (m *IAMUserMutation) AvatarURL() (r string, exists bool) {
+	v := m.avatar_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAvatarURL returns the old "avatar_url" field's value of the IAMUser entity.
+// If the IAMUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *IAMUserMutation) OldAvatarURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAvatarURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAvatarURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAvatarURL: %w", err)
+	}
+	return oldValue.AvatarURL, nil
+}
+
+// ResetAvatarURL resets all changes to the "avatar_url" field.
+func (m *IAMUserMutation) ResetAvatarURL() {
+	m.avatar_url = nil
+}
+
 // AddRoleIDs adds the "roles" edge to the IAMRole entity by ids.
 func (m *IAMUserMutation) AddRoleIDs(ids ...uint64) {
 	if m.roles == nil {
@@ -2992,7 +3161,7 @@ func (m *IAMUserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *IAMUserMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 9)
 	if m.created_at != nil {
 		fields = append(fields, iamuser.FieldCreatedAt)
 	}
@@ -3007,6 +3176,18 @@ func (m *IAMUserMutation) Fields() []string {
 	}
 	if m.display_name != nil {
 		fields = append(fields, iamuser.FieldDisplayName)
+	}
+	if m.phone != nil {
+		fields = append(fields, iamuser.FieldPhone)
+	}
+	if m.password_hash != nil {
+		fields = append(fields, iamuser.FieldPasswordHash)
+	}
+	if m.avatar_object_id != nil {
+		fields = append(fields, iamuser.FieldAvatarObjectID)
+	}
+	if m.avatar_url != nil {
+		fields = append(fields, iamuser.FieldAvatarURL)
 	}
 	return fields
 }
@@ -3026,6 +3207,14 @@ func (m *IAMUserMutation) Field(name string) (ent.Value, bool) {
 		return m.UserCode()
 	case iamuser.FieldDisplayName:
 		return m.DisplayName()
+	case iamuser.FieldPhone:
+		return m.Phone()
+	case iamuser.FieldPasswordHash:
+		return m.PasswordHash()
+	case iamuser.FieldAvatarObjectID:
+		return m.AvatarObjectID()
+	case iamuser.FieldAvatarURL:
+		return m.AvatarURL()
 	}
 	return nil, false
 }
@@ -3045,6 +3234,14 @@ func (m *IAMUserMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldUserCode(ctx)
 	case iamuser.FieldDisplayName:
 		return m.OldDisplayName(ctx)
+	case iamuser.FieldPhone:
+		return m.OldPhone(ctx)
+	case iamuser.FieldPasswordHash:
+		return m.OldPasswordHash(ctx)
+	case iamuser.FieldAvatarObjectID:
+		return m.OldAvatarObjectID(ctx)
+	case iamuser.FieldAvatarURL:
+		return m.OldAvatarURL(ctx)
 	}
 	return nil, fmt.Errorf("unknown IAMUser field %s", name)
 }
@@ -3089,6 +3286,34 @@ func (m *IAMUserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetDisplayName(v)
 		return nil
+	case iamuser.FieldPhone:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPhone(v)
+		return nil
+	case iamuser.FieldPasswordHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPasswordHash(v)
+		return nil
+	case iamuser.FieldAvatarObjectID:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAvatarObjectID(v)
+		return nil
+	case iamuser.FieldAvatarURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAvatarURL(v)
+		return nil
 	}
 	return fmt.Errorf("unknown IAMUser field %s", name)
 }
@@ -3100,6 +3325,9 @@ func (m *IAMUserMutation) AddedFields() []string {
 	if m.adddelete_ts != nil {
 		fields = append(fields, iamuser.FieldDeleteTs)
 	}
+	if m.addavatar_object_id != nil {
+		fields = append(fields, iamuser.FieldAvatarObjectID)
+	}
 	return fields
 }
 
@@ -3110,6 +3338,8 @@ func (m *IAMUserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case iamuser.FieldDeleteTs:
 		return m.AddedDeleteTs()
+	case iamuser.FieldAvatarObjectID:
+		return m.AddedAvatarObjectID()
 	}
 	return nil, false
 }
@@ -3125,6 +3355,13 @@ func (m *IAMUserMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddDeleteTs(v)
+		return nil
+	case iamuser.FieldAvatarObjectID:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAvatarObjectID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown IAMUser numeric field %s", name)
@@ -3167,6 +3404,18 @@ func (m *IAMUserMutation) ResetField(name string) error {
 		return nil
 	case iamuser.FieldDisplayName:
 		m.ResetDisplayName()
+		return nil
+	case iamuser.FieldPhone:
+		m.ResetPhone()
+		return nil
+	case iamuser.FieldPasswordHash:
+		m.ResetPasswordHash()
+		return nil
+	case iamuser.FieldAvatarObjectID:
+		m.ResetAvatarObjectID()
+		return nil
+	case iamuser.FieldAvatarURL:
+		m.ResetAvatarURL()
 		return nil
 	}
 	return fmt.Errorf("unknown IAMUser field %s", name)

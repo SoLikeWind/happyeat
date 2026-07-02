@@ -10,9 +10,8 @@ import (
 
 	"github.com/solikewind/happyeat/app/internal/pkg/casbinrules"
 	"github.com/solikewind/happyeat/dal/model/ent"
-	"github.com/solikewind/happyeat/dal/model/ent/iampermission"
-	"github.com/solikewind/happyeat/dal/model/ent/iamrole"
-	"github.com/solikewind/happyeat/dal/model/ent/iamuser"
+	iamdal "github.com/solikewind/happyeat/dal/model/iam"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // RbacPolicyRule 与 Casbin 投影中的 (obj, act) 一致，定义见 casbinrules.PolicyRule。
@@ -20,13 +19,19 @@ type RbacPolicyRule = casbinrules.PolicyRule
 
 var roleCodePattern = regexp.MustCompile(`^[a-z][a-z0-9_]{1,31}$`)
 
+// phonePattern 中国大陆手机号（简单校验：1 开头 11 位）。
+var phonePattern = regexp.MustCompile(`^1[3-9]\d{9}$`)
+
+// RbacStore 承载 IAM/RBAC 的服务逻辑（校验、Casbin 种子/投影编排），
+// 纯数据访问委托给 dal/model/iam。
 type RbacStore struct {
-	mu     sync.RWMutex
-	client *ent.Client
+	mu  sync.RWMutex
+	iam *iamdal.IAM
 }
 
+// NewRbacStore 基于 ent client 构造（内部封装 IAM DAL）。
 func NewRbacStore(client *ent.Client) (*RbacStore, error) {
-	store := &RbacStore{client: client}
+	store := &RbacStore{iam: iamdal.NewIAM(client)}
 	if err := store.bootstrap(context.Background()); err != nil {
 		return nil, err
 	}
@@ -36,35 +41,10 @@ func NewRbacStore(client *ent.Client) (*RbacStore, error) {
 func (s *RbacStore) List() (map[string][]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-
-	ctx := context.Background()
-	roles, err := s.client.IAMRole.Query().
-		WithPermissions(func(q *ent.IAMPermissionQuery) {
-			q.Order(ent.Asc(iampermission.FieldPermissionCode))
-		}).
-		Order(ent.Asc(iamrole.FieldRoleCode)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make(map[string][]string, len(roles))
-	for _, role := range roles {
-		out[role.RoleCode] = make([]string, 0, len(role.Edges.Permissions))
-		for _, permission := range role.Edges.Permissions {
-			out[role.RoleCode] = append(out[role.RoleCode], permission.PermissionCode)
-		}
-	}
-	return out, nil
+	return s.iam.RolePermissionsMap(context.Background())
 }
 
 func (s *RbacStore) UpdateRole(roleCode string, permissions []string) error {
-	ctx := context.Background()
-	roleEnt, err := s.client.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(ctx)
-	if err != nil {
-		return errors.New("role not found")
-	}
-
 	seen := map[string]struct{}{}
 	dedup := make([]string, 0, len(permissions))
 	for _, permission := range permissions {
@@ -79,107 +59,46 @@ func (s *RbacStore) UpdateRole(roleCode string, permissions []string) error {
 	}
 	sort.Strings(dedup)
 
-	tx, err := s.client.Tx(ctx)
+	err := s.iam.SetRolePermissions(context.Background(), roleCode, dedup)
 	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
-	updater := tx.IAMRole.UpdateOneID(roleEnt.ID).ClearPermissions()
-	if len(dedup) > 0 {
-		permissionEnts, err := tx.IAMPermission.Query().
-			Where(iampermission.PermissionCodeIn(dedup...)).
-			All(ctx)
-		if err != nil {
-			return err
+		if ent.IsNotFound(err) {
+			return errors.New("role not found")
 		}
-		if len(permissionEnts) != len(dedup) {
+		if errors.Is(err, iamdal.ErrPermissionsNotFound) {
 			return errors.New("permissions not found")
 		}
-		permissionIDs := make([]uint64, 0, len(permissionEnts))
-		for _, item := range permissionEnts {
-			permissionIDs = append(permissionIDs, item.ID)
-		}
-		updater = updater.AddPermissionIDs(permissionIDs...)
-	}
-	if _, err = updater.Save(ctx); err != nil {
 		return err
 	}
-	return tx.Commit()
+	return nil
 }
 
 func (s *RbacStore) ListUserRoles() (map[string][]string, error) {
-	ctx := context.Background()
-	users, err := s.client.IAMUser.Query().
-		WithRoles(func(q *ent.IAMRoleQuery) {
-			q.Order(ent.Asc(iamrole.FieldRoleCode))
-		}).
-		Order(ent.Asc(iamuser.FieldUserCode)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	out := make(map[string][]string, len(users))
-	for _, user := range users {
-		out[user.UserCode] = make([]string, 0, len(user.Edges.Roles))
-		for _, role := range user.Edges.Roles {
-			out[user.UserCode] = append(out[user.UserCode], role.RoleCode)
-		}
-	}
-	return out, nil
-}
-
-func (s *RbacStore) EnsureUser(userCode string) error {
-	if userCode == "" {
-		return errors.New("user_code 不能为空")
-	}
-	ctx := context.Background()
-	exists, err := s.client.IAMUser.Query().Where(iamuser.UserCodeEQ(userCode)).Exist(ctx)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-	_, err = s.client.IAMUser.Create().
-		SetUserCode(userCode).
-		SetDisplayName(userCode).
-		Save(ctx)
-	return err
+	return s.iam.UserRolesMap(context.Background())
 }
 
 func (s *RbacStore) AssignUserRole(userCode, roleCode string) error {
 	if err := s.requireRole(roleCode); err != nil {
 		return err
 	}
-	if err := s.EnsureUser(userCode); err != nil {
-		return err
-	}
-
 	ctx := context.Background()
-	userEnt, err := s.client.IAMUser.Query().Where(iamuser.UserCodeEQ(userCode)).Only(ctx)
+	exists, err := s.iam.UserExistsByCode(ctx, userCode)
 	if err != nil {
 		return err
 	}
-	roleEnt, err := s.client.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(ctx)
-	if err != nil {
-		return err
+	if !exists {
+		return errors.New("用户不存在，请先创建用户")
 	}
-	hasRole, err := s.client.IAMUser.Query().
-		Where(iamuser.UserCodeEQ(userCode), iamuser.HasRolesWith(iamrole.RoleCodeEQ(roleCode))).
-		Exist(ctx)
+	hasRole, err := s.iam.UserHasRole(ctx, userCode, roleCode)
 	if err != nil {
 		return err
 	}
 	if hasRole {
 		return nil
 	}
-	_, err = s.client.IAMUser.UpdateOneID(userEnt.ID).AddRoleIDs(roleEnt.ID).Save(ctx)
-	return err
+	return s.iam.AddUserRole(ctx, userCode, roleCode)
 }
 
-// RemoveUserRole 解除用户与角色的关联；用户或绑定不存在时：用户不存在返回错误，未绑定则幂等成功。
+// RemoveUserRole 解除用户与角色的关联；用户不存在返回错误，未绑定则幂等成功。
 func (s *RbacStore) RemoveUserRole(userCode, roleCode string) error {
 	if strings.TrimSpace(userCode) == "" {
 		return errors.New("user_code 不能为空")
@@ -188,28 +107,21 @@ func (s *RbacStore) RemoveUserRole(userCode, roleCode string) error {
 		return err
 	}
 	ctx := context.Background()
-	userEnt, err := s.client.IAMUser.Query().Where(iamuser.UserCodeEQ(userCode)).Only(ctx)
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return errors.New("用户未找到")
-		}
-		return err
-	}
-	roleEnt, err := s.client.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(ctx)
+	exists, err := s.iam.UserExistsByCode(ctx, userCode)
 	if err != nil {
 		return err
 	}
-	hasRole, err := s.client.IAMUser.Query().
-		Where(iamuser.UserCodeEQ(userCode), iamuser.HasRolesWith(iamrole.RoleCodeEQ(roleCode))).
-		Exist(ctx)
+	if !exists {
+		return errors.New("用户未找到")
+	}
+	hasRole, err := s.iam.UserHasRole(ctx, userCode, roleCode)
 	if err != nil {
 		return err
 	}
 	if !hasRole {
 		return nil
 	}
-	_, err = s.client.IAMUser.UpdateOneID(userEnt.ID).RemoveRoleIDs(roleEnt.ID).Save(ctx)
-	return err
+	return s.iam.RemoveUserRole(ctx, userCode, roleCode)
 }
 
 // IAMPermissionListItem 分页列出权限点（供 IAM API 使用）。
@@ -220,18 +132,7 @@ type IAMPermissionListItem struct {
 
 // ListIAMPermissionsPage 按 keyword 模糊匹配 permission_code / description，分页升序 code。
 func (s *RbacStore) ListIAMPermissionsPage(ctx context.Context, offset, limit int, keyword string) ([]IAMPermissionListItem, int64, error) {
-	q := s.client.IAMPermission.Query()
-	if kw := strings.TrimSpace(keyword); kw != "" {
-		q = q.Where(iampermission.Or(
-			iampermission.PermissionCodeContainsFold(kw),
-			iampermission.DescriptionContainsFold(kw),
-		))
-	}
-	total, err := q.Clone().Count(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	rows, err := q.Order(ent.Asc(iampermission.FieldPermissionCode)).Offset(offset).Limit(limit).All(ctx)
+	rows, total, err := s.iam.ListPermissionsPage(ctx, offset, limit, strings.TrimSpace(keyword))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -254,18 +155,7 @@ type IAMRoleListItem struct {
 
 // ListIAMRolesPage 按 keyword 模糊匹配 role_code / role_name。
 func (s *RbacStore) ListIAMRolesPage(ctx context.Context, offset, limit int, keyword string) ([]IAMRoleListItem, int64, error) {
-	q := s.client.IAMRole.Query()
-	if kw := strings.TrimSpace(keyword); kw != "" {
-		q = q.Where(iamrole.Or(
-			iamrole.RoleCodeContainsFold(kw),
-			iamrole.RoleNameContainsFold(kw),
-		))
-	}
-	total, err := q.Clone().Count(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	rows, err := q.Order(ent.Asc(iamrole.FieldRoleCode)).Offset(offset).Limit(limit).All(ctx)
+	rows, total, err := s.iam.ListRolesPage(ctx, offset, limit, strings.TrimSpace(keyword))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -290,14 +180,14 @@ func (s *RbacStore) CreateRole(roleCode, roleName string) (uint64, error) {
 		roleName = roleCode
 	}
 	ctx := context.Background()
-	exists, err := s.client.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Exist(ctx)
+	exists, err := s.iam.RoleExists(ctx, roleCode)
 	if err != nil {
 		return 0, err
 	}
 	if exists {
 		return 0, errors.New("role_code 已存在")
 	}
-	row, err := s.client.IAMRole.Create().SetRoleCode(roleCode).SetRoleName(roleName).Save(ctx)
+	row, err := s.iam.CreateRole(ctx, roleCode, roleName)
 	if err != nil {
 		return 0, err
 	}
@@ -307,7 +197,7 @@ func (s *RbacStore) CreateRole(roleCode, roleName string) (uint64, error) {
 // DeleteRoleByID 软删角色；预置角色不可删。
 func (s *RbacStore) DeleteRoleByID(id uint64) error {
 	ctx := context.Background()
-	row, err := s.client.IAMRole.Query().Where(iamrole.IDEQ(id)).Only(ctx)
+	row, err := s.iam.GetRoleByID(ctx, id)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return errors.New("角色不存在")
@@ -317,15 +207,19 @@ func (s *RbacStore) DeleteRoleByID(id uint64) error {
 	if casbinrules.IsPresetRole(row.RoleCode) {
 		return errors.New("系统预置角色不可删除")
 	}
-	return s.client.IAMRole.DeleteOneID(id).Exec(ctx)
+	return s.iam.DeleteRoleByID(ctx, id)
 }
 
 // IAMUserListItem 分页列出用户及其角色 code。
 type IAMUserListItem struct {
-	ID          uint64
-	UserCode    string
-	DisplayName string
-	Roles       []string
+	ID             uint64
+	UserCode       string
+	Phone          string
+	DisplayName    string
+	Roles          []string
+	AvatarObjectID uint64
+	AvatarURL      string
+	HasPassword    bool
 }
 
 // GetUserRoleCodes 返回用户已绑定的角色编码（升序）。
@@ -334,13 +228,7 @@ func (s *RbacStore) GetUserRoleCodes(userCode string) ([]string, error) {
 	if userCode == "" {
 		return nil, errors.New("user_code 不能为空")
 	}
-	ctx := context.Background()
-	row, err := s.client.IAMUser.Query().
-		Where(iamuser.UserCodeEQ(userCode)).
-		WithRoles(func(rq *ent.IAMRoleQuery) {
-			rq.Order(ent.Asc(iamrole.FieldRoleCode))
-		}).
-		Only(ctx)
+	row, err := s.iam.GetByCode(context.Background(), userCode, true)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return nil, errors.New("用户不存在")
@@ -354,79 +242,279 @@ func (s *RbacStore) GetUserRoleCodes(userCode string) ([]string, error) {
 	return out, nil
 }
 
-// CreateUser 创建 IAM 用户主体（不含角色，需另行 AssignUserRole）。
-func (s *RbacStore) CreateUser(userCode, displayName string) (uint64, error) {
-	userCode = strings.TrimSpace(userCode)
+// CreateUser 创建 IAM 用户主体（手机号唯一 + bcrypt 密码；角色另行 AssignUserRole）。
+// user_code 留空时自动取手机号作为稳定内部主体。
+func (s *RbacStore) CreateUser(userCode, displayName, phone, password string) (uint64, error) {
+	phone = strings.TrimSpace(phone)
+	if !phonePattern.MatchString(phone) {
+		return 0, errors.New("手机号格式不正确")
+	}
+	if len(password) < 6 {
+		return 0, errors.New("密码至少 6 位")
+	}
+	userCode = strings.TrimSpace(strings.ToLower(userCode))
 	if userCode == "" {
-		return 0, errors.New("user_code 不能为空")
+		userCode = phone
 	}
+	displayName = strings.TrimSpace(displayName)
 	if displayName == "" {
-		displayName = userCode
+		displayName = phone
 	}
-	ctx := context.Background()
-	exists, err := s.client.IAMUser.Query().Where(iamuser.UserCodeEQ(userCode)).Exist(ctx)
+	hash, err := hashPassword(password)
 	if err != nil {
 		return 0, err
 	}
-	if exists {
+
+	ctx := context.Background()
+	if exists, err := s.iam.PhoneExists(ctx, phone); err != nil {
+		return 0, err
+	} else if exists {
+		return 0, errors.New("手机号已被注册")
+	}
+	if exists, err := s.iam.UserExistsByCode(ctx, userCode); err != nil {
+		return 0, err
+	} else if exists {
 		return 0, errors.New("user_code 已存在")
 	}
-	row, err := s.client.IAMUser.Create().SetUserCode(userCode).SetDisplayName(displayName).Save(ctx)
+
+	row, err := s.iam.Create(ctx, iamdal.CreateRow{
+		UserCode:     userCode,
+		Phone:        phone,
+		DisplayName:  displayName,
+		PasswordHash: hash,
+	})
 	if err != nil {
 		return 0, err
 	}
 	return row.ID, nil
 }
 
-// DeleteUserByID 软删用户并清除角色关联。
-func (s *RbacStore) DeleteUserByID(id uint64) error {
-	ctx := context.Background()
-	row, err := s.client.IAMUser.Query().Where(iamuser.IDEQ(id)).Only(ctx)
+// LoginUser 登录校验主体（供 loginlogic 使用）。
+type LoginUser struct {
+	UserCode    string
+	DisplayName string
+	Phone       string
+	AvatarURL   string
+	Roles       []string
+}
+
+// AuthenticateByPhone 用手机号 + 密码校验登录；成功返回主体与角色。
+func (s *RbacStore) AuthenticateByPhone(phone, password string) (*LoginUser, error) {
+	phone = strings.TrimSpace(phone)
+	if phone == "" {
+		return nil, errors.New("手机号不能为空")
+	}
+	row, err := s.iam.GetByPhone(context.Background(), phone, true)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("用户名或密码错误")
+		}
+		return nil, err
+	}
+	return finishAuth(row, password)
+}
+
+// AuthenticateByUserCode 用 user_code + 密码校验登录（兼容 dev-admin 等非手机号账号）。
+func (s *RbacStore) AuthenticateByUserCode(userCode, password string) (*LoginUser, error) {
+	userCode = strings.TrimSpace(userCode)
+	if userCode == "" {
+		return nil, errors.New("账号不能为空")
+	}
+	row, err := s.iam.GetByCode(context.Background(), userCode, true)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("用户名或密码错误")
+		}
+		return nil, err
+	}
+	return finishAuth(row, password)
+}
+
+func finishAuth(row *ent.IAMUser, password string) (*LoginUser, error) {
+	if row.PasswordHash == "" {
+		return nil, errors.New("该账号未设置密码，请联系管理员")
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(row.PasswordHash), []byte(password)); err != nil {
+		return nil, errors.New("用户名或密码错误")
+	}
+	roles := make([]string, 0, len(row.Edges.Roles))
+	for _, r := range row.Edges.Roles {
+		roles = append(roles, r.RoleCode)
+	}
+	if len(roles) == 0 {
+		return nil, errors.New("该用户未分配角色，请联系管理员")
+	}
+	return &LoginUser{
+		UserCode:    row.UserCode,
+		DisplayName: row.DisplayName,
+		Phone:       row.Phone,
+		AvatarURL:   row.AvatarURL,
+		Roles:       roles,
+	}, nil
+}
+
+// SetPassword 设置/重置用户密码（bcrypt）。
+func (s *RbacStore) SetPassword(userCode, newPassword string) error {
+	if len(newPassword) < 6 {
+		return errors.New("密码至少 6 位")
+	}
+	hash, err := hashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	err = s.iam.UpdatePasswordByCode(context.Background(), userCode, hash)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			return errors.New("用户不存在")
 		}
 		return err
 	}
-	if _, err = s.client.IAMUser.UpdateOneID(row.ID).ClearRoles().Save(ctx); err != nil {
+	return nil
+}
+
+// SetPasswordByID 按用户 ID 重置密码（管理员用）。
+func (s *RbacStore) SetPasswordByID(id uint64, newPassword string) error {
+	if len(newPassword) < 6 {
+		return errors.New("密码至少 6 位")
+	}
+	hash, err := hashPassword(newPassword)
+	if err != nil {
 		return err
 	}
-	return s.client.IAMUser.DeleteOneID(id).Exec(ctx)
+	ctx := context.Background()
+	exists, err := s.iam.UserExistsByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New("用户不存在")
+	}
+	return s.iam.UpdatePasswordByID(ctx, id, hash)
+}
+
+// ChangePassword 用户自助改密：校验旧密码后设置新密码。
+func (s *RbacStore) ChangePassword(userCode, oldPassword, newPassword string) error {
+	if _, err := s.AuthenticateByUserCode(userCode, oldPassword); err != nil {
+		return errors.New("原密码不正确")
+	}
+	return s.SetPassword(userCode, newPassword)
+}
+
+// SetAvatar 更新用户头像对象与 URL 快照。
+func (s *RbacStore) SetAvatar(userCode string, objectID uint64, url string) error {
+	err := s.iam.UpdateAvatarByCode(context.Background(), userCode, objectID, url)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return errors.New("用户不存在")
+		}
+		return err
+	}
+	return nil
+}
+
+// UpdateUserByID 更新用户展示名/手机号/头像（管理员用，nil 表示不改）。
+func (s *RbacStore) UpdateUserByID(id uint64, displayName, phone *string, avatarObjectID *uint64, avatarURL *string) error {
+	ctx := context.Background()
+	exists, err := s.iam.UserExistsByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New("用户不存在")
+	}
+	upd := iamdal.UpdateRow{AvatarObjectID: avatarObjectID, AvatarURL: avatarURL}
+	if displayName != nil {
+		dn := strings.TrimSpace(*displayName)
+		upd.DisplayName = &dn
+	}
+	if phone != nil {
+		p := strings.TrimSpace(*phone)
+		if !phonePattern.MatchString(p) {
+			return errors.New("手机号格式不正确")
+		}
+		dup, err := s.iam.PhoneExistsExceptID(ctx, p, id)
+		if err != nil {
+			return err
+		}
+		if dup {
+			return errors.New("手机号已被注册")
+		}
+		upd.Phone = &p
+	}
+	return s.iam.UpdateByID(ctx, id, upd)
+}
+
+// GetUserDetailByCode 读取用户明细（含角色、头像对象），供 me/详情接口。
+func (s *RbacStore) GetUserDetailByCode(userCode string) (*IAMUserListItem, error) {
+	row, err := s.iam.GetByCode(context.Background(), userCode, true)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("用户不存在")
+		}
+		return nil, err
+	}
+	return entUserToListItem(row), nil
+}
+
+// GetUserDetailByID 读取用户明细（管理员详情接口）。
+func (s *RbacStore) GetUserDetailByID(id uint64) (*IAMUserListItem, error) {
+	row, err := s.iam.GetByID(context.Background(), id, true)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("用户不存在")
+		}
+		return nil, err
+	}
+	return entUserToListItem(row), nil
+}
+
+func entUserToListItem(row *ent.IAMUser) *IAMUserListItem {
+	roleCodes := make([]string, 0, len(row.Edges.Roles))
+	for _, r := range row.Edges.Roles {
+		roleCodes = append(roleCodes, r.RoleCode)
+	}
+	return &IAMUserListItem{
+		ID:             row.ID,
+		UserCode:       row.UserCode,
+		Phone:          row.Phone,
+		DisplayName:    row.DisplayName,
+		Roles:          roleCodes,
+		AvatarObjectID: row.AvatarObjectID,
+		AvatarURL:      row.AvatarURL,
+		HasPassword:    row.PasswordHash != "",
+	}
+}
+
+func hashPassword(password string) (string, error) {
+	b, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+// DeleteUserByID 软删用户并清除角色关联。
+func (s *RbacStore) DeleteUserByID(id uint64) error {
+	ctx := context.Background()
+	exists, err := s.iam.UserExistsByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errors.New("用户不存在")
+	}
+	return s.iam.DeleteByID(ctx, id)
 }
 
 // ListIAMUsersPage 按 keyword 模糊匹配 user_code / display_name。
 func (s *RbacStore) ListIAMUsersPage(ctx context.Context, offset, limit int, keyword string) ([]IAMUserListItem, int64, error) {
-	q := s.client.IAMUser.Query()
-	if kw := strings.TrimSpace(keyword); kw != "" {
-		q = q.Where(iamuser.Or(
-			iamuser.UserCodeContainsFold(kw),
-			iamuser.DisplayNameContainsFold(kw),
-		))
-	}
-	total, err := q.Clone().Count(ctx)
-	if err != nil {
-		return nil, 0, err
-	}
-	rows, err := q.Order(ent.Asc(iamuser.FieldUserCode)).Offset(offset).Limit(limit).
-		WithRoles(func(rq *ent.IAMRoleQuery) {
-			rq.Order(ent.Asc(iamrole.FieldRoleCode))
-		}).
-		All(ctx)
+	rows, total, err := s.iam.ListUsersPage(ctx, offset, limit, strings.TrimSpace(keyword))
 	if err != nil {
 		return nil, 0, err
 	}
 	out := make([]IAMUserListItem, 0, len(rows))
 	for _, row := range rows {
-		roleCodes := make([]string, 0, len(row.Edges.Roles))
-		for _, r := range row.Edges.Roles {
-			roleCodes = append(roleCodes, r.RoleCode)
-		}
-		out = append(out, IAMUserListItem{
-			ID:          row.ID,
-			UserCode:    row.UserCode,
-			DisplayName: row.DisplayName,
-			Roles:       roleCodes,
-		})
+		out = append(out, *entUserToListItem(row))
 	}
 	return out, int64(total), nil
 }
@@ -460,12 +548,6 @@ func (s *RbacStore) bootstrap(ctx context.Context) error {
 
 func (s *RbacStore) seedRolesAndPermissions(ctx context.Context) error {
 	defaults := defaultRolePermissions()
-	tx, err := s.client.Tx(ctx)
-	if err != nil {
-		return err
-	}
-	defer tx.Rollback()
-
 	presetNames := map[string]string{
 		"super_admin": "超级管理员",
 		"manager":     "店长",
@@ -474,40 +556,25 @@ func (s *RbacStore) seedRolesAndPermissions(ctx context.Context) error {
 		"waiter":      "服务员",
 	}
 	for roleCode := range defaults {
-		exists, err := tx.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Exist(ctx)
-		if err != nil {
-			return err
+		name := presetNames[roleCode]
+		if name == "" {
+			name = roleCode
 		}
-		if !exists {
-			name := presetNames[roleCode]
-			if name == "" {
-				name = roleCode
-			}
-			if _, err = tx.IAMRole.Create().SetRoleCode(roleCode).SetRoleName(name).Save(ctx); err != nil {
-				return err
-			}
+		if err := s.iam.EnsureRole(ctx, roleCode, name); err != nil {
+			return err
 		}
 	}
 	for _, permission := range casbinrules.PermissionCatalog {
-		exists, err := tx.IAMPermission.Query().Where(iampermission.PermissionCodeEQ(permission.Code)).Exist(ctx)
-		if err != nil {
+		if err := s.iam.EnsurePermission(ctx, permission.Code, permission.Description); err != nil {
 			return err
 		}
-		if !exists {
-			if _, err = tx.IAMPermission.Create().
-				SetPermissionCode(permission.Code).
-				SetDescription(permission.Description).
-				Save(ctx); err != nil {
-				return err
-			}
-		}
 	}
-	return tx.Commit()
+	return nil
 }
 
 func (s *RbacStore) seedDefaultMappings() error {
 	ctx := context.Background()
-	count, err := s.client.IAMRole.Query().QueryPermissions().Count(ctx)
+	count, err := s.iam.RolePermissionsCount(ctx)
 	if err != nil {
 		return err
 	}
@@ -519,12 +586,11 @@ func (s *RbacStore) seedDefaultMappings() error {
 			}
 		}
 	}
-	if err := s.EnsureUser("dev-admin"); err != nil {
+	// dev-admin：开发态内置超管账号（占位手机号 + 默认密码 admin123），用 user_code 登录。
+	if err := s.ensureDevAdmin(ctx); err != nil {
 		return err
 	}
-	hasRole, err := s.client.IAMUser.Query().
-		Where(iamuser.UserCodeEQ("dev-admin"), iamuser.HasRolesWith(iamrole.RoleCodeEQ("super_admin"))).
-		Exist(ctx)
+	hasRole, err := s.iam.UserHasRole(ctx, "dev-admin", "super_admin")
 	if err != nil {
 		return err
 	}
@@ -536,9 +602,38 @@ func (s *RbacStore) seedDefaultMappings() error {
 	return nil
 }
 
+// ensureDevAdmin 确保开发态超管账号存在且已设密码。
+func (s *RbacStore) ensureDevAdmin(ctx context.Context) error {
+	const code = "dev-admin"
+	row, err := s.iam.GetByCode(ctx, code, false)
+	if err != nil {
+		if !iamdal.IsNotFound(err) {
+			return err
+		}
+		hash, herr := hashPassword("admin123")
+		if herr != nil {
+			return herr
+		}
+		_, cerr := s.iam.Create(ctx, iamdal.CreateRow{
+			UserCode:     code,
+			Phone:        "admin",
+			DisplayName:  "超级管理员",
+			PasswordHash: hash,
+		})
+		return cerr
+	}
+	if row.PasswordHash == "" {
+		hash, herr := hashPassword("admin123")
+		if herr != nil {
+			return herr
+		}
+		return s.iam.UpdatePasswordByID(ctx, row.ID, hash)
+	}
+	return nil
+}
+
 func (s *RbacStore) requireRole(roleCode string) error {
-	ctx := context.Background()
-	exists, err := s.client.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Exist(ctx)
+	exists, err := s.iam.RoleExists(context.Background(), roleCode)
 	if err != nil {
 		return err
 	}

@@ -82,7 +82,11 @@ var (
 		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间", SchemaType: map[string]string{"postgres": "timestamptz"}},
 		{Name: "delete_ts", Type: field.TypeInt64, Comment: "删除时间戳", Default: 0},
 		{Name: "user_code", Type: field.TypeString, Unique: true, Comment: "用户编码"},
-		{Name: "display_name", Type: field.TypeString, Comment: "展示名", Default: ""},
+		{Name: "display_name", Type: field.TypeString, Comment: "用户名"},
+		{Name: "phone", Type: field.TypeString, Unique: true, Comment: "登录手机号（唯一；作为登录账号，可变）"},
+		{Name: "password_hash", Type: field.TypeString, Comment: "登录密码 bcrypt 哈希"},
+		{Name: "avatar_object_id", Type: field.TypeUint64, Comment: "头像对象 ID（引用 objects.id，0 表示无）", Default: 0},
+		{Name: "avatar_url", Type: field.TypeString, Comment: "头像访问 URL 快照（私有桶读取时重签）", Default: ""},
 	}
 	// IamUsersTable holds the schema information for the "iam_users" table.
 	IamUsersTable = &schema.Table{

@@ -69,6 +69,10 @@ IAM（PostgreSQL）
 3. **`init_policy.sql` 与 IAM 双来源**  
    手工 SQL 曾为 `dev-admin` 插入 `g(dev-admin, super_admin)`，在 Casbin 全量同步异常时，可能出现「只有 dev-admin 能用、其他人全挂」的假象。
 
+4. **角色 CRUD 触发全量 Casbin 重建（权限页）**  
+   旧版在创建 / 保存 / 重置角色权限时调用 `SyncRolePoliciesToCasbin`，会「先删光再重建」全部用户的 `g` 绑定；`AddGroupingPolicy` 失败时无感知 → **操作者本人**在刷新权限矩阵时立刻 403（`GET /rbac/role-permissions`、`GET /iam/roles`）。  
+   **已修复**（`050e0d4`）：改为 `ReplaceRolePoliciesInCasbin` + `EnsureActorCasbinGroupings`。
+
 ### 恢复方式（已验证有效）
 
 任选其一：
@@ -107,13 +111,26 @@ IAM（PostgreSQL）
 
 | 操作 | IAM | Casbin |
 |------|-----|--------|
-| 服务启动 | bootstrap | `SyncRolePoliciesToCasbin` 全量 |
-| 分配用户角色（API） | ✓ | `EnsureUserCasbinGroupings` 按 IAM 对齐 g |
-| 移除用户角色（API） | ✓ | `EnsureUserCasbinGroupings` 按 IAM 对齐 g |
-| 删除角色（API） | ✓ | 增量 `RemoveRolePoliciesFromCasbin` |
-| 更新角色权限 / 重置权限 | ✓ | 全量 `SyncRolePoliciesToCasbin` |
-| 删除用户 | ✓ | 全量 `SyncRolePoliciesToCasbin` |
-| bootstrap 给 dev-admin 绑角色 | ✓ | **不单独写**（依赖启动全量同步） |
+| 服务启动 | bootstrap | `SyncRolePoliciesToCasbin`（`p` 全量 + 逐用户 `EnsureUserCasbinGroupings`） |
+| 分配 / 移除用户角色（API） | ✓ | `EnsureUserCasbinGroupings` 按 IAM 对齐 g |
+| 创建角色（带初始权限） | ✓ | `ReplaceRolePoliciesInCasbin` 仅写该角色 `p` + `EnsureActorCasbinGroupings` |
+| 更新 / 重置角色权限 | ✓ | `ReplaceRolePoliciesInCasbin`（逐角色）+ `EnsureActorCasbinGroupings` |
+| 删除角色（API） | ✓ | `RemoveRolePoliciesFromCasbin` + 受影响用户 `EnsureUserCasbinGroupings` + 操作者对齐 |
+| 删除用户（API） | ✓ | `RemoveAllUserCasbinGroupings`（仅删该用户 g，不重建全员） |
+| 手动「同步 Casbin」 | — | `SyncRolePoliciesToCasbin` |
+| bootstrap 给 dev-admin 绑角色 | ✓ | 依赖启动时全量同步 |
+
+核心函数（`app/internal/svc/rbac_sync.go`）：
+
+| 函数 | 作用 |
+|------|------|
+| `EnsureUserCasbinGroupings` | 单用户：IAM → Casbin `g` 对齐，跳过 `unknown` |
+| `EnsureUserCasbinGroupingsForUsers` | 批量用户对齐 |
+| `EnsureActorCasbinGroupings` | 当前登录用户对齐（角色变更后防操作者 403） |
+| `ReplaceRolePoliciesInCasbin` | 单角色 `p` 策略替换，**不碰**用户 `g` |
+| `RemoveRolePoliciesFromCasbin` | 删角色：移除该角色 `p` + 相关 `g` |
+| `RemoveAllUserCasbinGroupings` | 删用户：移除该用户全部 `g` |
+| `SyncRolePoliciesToCasbin` | 全量：重建全部 `p` + 逐用户对齐 `g` |
 
 相关代码：
 
@@ -125,13 +142,17 @@ IAM（PostgreSQL）
 
 ## 6. 日常运维习惯（推荐）
 
-**在以下操作之后，执行一次「同步 Casbin」或重启后端：**
+**在以下操作之后，一般无需再手动同步**（代码已增量对齐）；若仍 403 可重启或点「同步 Casbin」：
 
 - 为用户分配 / 移除角色
-- 修改角色权限矩阵
-- 删除角色
+- 在权限页创建 / 保存 / 重置 / 删除角色
 - 删除用户
-- 数据库手工改过 IAM 相关表
+
+**仍建议手动同步或重启的场景：**
+
+- 数据库手工改过 IAM / `casbin_rule` 表
+- 从旧版本升级后首次部署
+- 排查 403 仍无法恢复时
 
 **排查 403 步骤：**
 
@@ -139,7 +160,7 @@ IAM（PostgreSQL）
    - 为空 → 在用户管理重新分配角色，并重新登录  
 2. `roles` 正常仍 403 → **IAM 与 Casbin 不同步**  
    - 超管执行 Casbin 同步或重启服务  
-3. 仍异常 → 在数据库对比 IAM 与 Casbin（见第 8 节 SQL）
+3. 仍异常 → 在数据库对比 IAM 与 Casbin（见第 9 节 SQL）
 
 **请勿：**
 
@@ -148,30 +169,33 @@ IAM（PostgreSQL）
 
 ---
 
-## 7. 已知隐患（暂未改代码，需知晓）
+## 7. Bug 与问题记录
 
-以下问题在 2026-07 审查中确认，**当前靠运维流程兜底**：
+### 7.1 已修复（2026-07-03，提交 `24b1b2f` / `050e0d4`）
 
-### P0 — 同步可靠性
+| # | 问题 | 现象 | 根因 | 修复 |
+|---|------|------|------|------|
+| B1 | `unknown` 写入 IAM | 部分用户仅绑 `unknown`；删角色后全站 403 | bootstrap 曾 seed `unknown`；前端兜底码不应进 IAM | 不再 seed；启动 `purgeLegacyUnknownBindings`；UI/API 隐藏 |
+| B2 | 删用户 `unknown` 后 403 | **任意账号**去掉 unknown 即 403，换号仍正常 | IAM 有真实角色，Casbin 仅 `g(user,unknown)`；旧逻辑只删 unknown 不补真实 `g` | `EnsureUserCasbinGroupings`（分配/移除用户角色时） |
+| B3 | 全站 403（除 dev-admin） | `/iam/me` 有角色，其它 API 403 | IAM 与 `casbin_rule` 不同步；`init_policy.sql` 手工 g 与全量同步异常 | 启动/手动全量同步；文档化运维流程 |
+| B4 | 角色 CRUD 后操作者 403 | 权限页创建/保存/重置角色后「加载权限数据失败」 | 角色权限变更触发 `SyncRolePoliciesToCasbin` 冲掉操作者 `g` | `ReplaceRolePoliciesInCasbin` + `EnsureActorCasbinGroupings` |
+| B5 | 删角色 / 删用户误伤全员 | 删除后无关用户权限异常 | 删用户曾触发全量 Casbin 重建 | 删用户改 `RemoveAllUserCasbinGroupings`；删角色后补全受影响用户 `g` |
+| B6 | 全量同步 `g` 不可靠 | 同步后丢 dev-admin 绑定、遗留孤儿 `g` | 「先 Remove 全部 g 再 Add」+ adapter 静默失败 | 全量同步的 `g` 部分改为逐用户 `EnsureUserCasbinGroupings` |
+| B7 | 预置角色展示英文 | 员工看到 `cashier` 等 code | DB `role_name` 未回填 | `PresetRoleNames` + API `role_names` + 前端 `resolveRoleDisplayName` |
 
-- **双数据源**：IAM 与 Casbin 可能短暂或不一致；`/iam/me` 正常 ≠ API 有权限  
-- **删 unknown 曾导致 403**（已修复）：解除 unknown 后须按 IAM 补齐真实角色的 Casbin `g`；见 `EnsureUserCasbinGroupings`  
-- **全量同步 `SyncRolePoliciesToCasbin`**：曾观测到丢失 `dev-admin` 的 `g` 绑定、无法清理历史孤儿策略；`AddGroupingPolicy` 返回 `false` 时无日志  
-- **`init_policy.sql`**：与 IAM 投影并存，dev-admin 可能被手工 SQL「特殊照顾」
+### 7.2 仍待观察 / 未修复
 
-### P1 — 数据与操作
+| # | 问题 | 影响 | 临时规避 |
+|---|------|------|----------|
+| O1 | `seedDefaultMappings` 非空库只刷新 `super_admin` | 其它预置角色 permissions 被改坏后不自动修复 | 权限页对该角色「重置默认」+ 同步 Casbin |
+| O2 | 可移除用户最后一个角色 | 用户零角色 → 无法登录 / 403 | 删角色前确认用户另有角色 |
+| O3 | `PUT /iam/me` 无 Casbin 规则 | 非超管改自己昵称/头像可能 403 | 管理员在用户管理页修改 |
+| O4 | `home:view` 无后端 HTTP 映射 | 仅前端导航用，后端不因该码放行 | 无（设计如此） |
+| O5 | Casbin 403 vs JWT 401 语义 | 用户以为「登录坏了」 | 看 `/iam/me` 是否有角色；有则同步 Casbin |
+| O6 | `init_policy.sql` 与 IAM 双来源 | dev-admin 可能靠手工 SQL 撑权限 | 以 IAM + 同步为准，勿手改 `casbin_rule` |
+| O7 | `AddGroupingPolicy` 返回 false 无日志 | 极端情况下绑定写入失败难排查 | 重启 + 全量同步；对比第 9 节 SQL |
 
-- **非空库启动**时 `seedDefaultMappings` 只强制刷新 `super_admin` 权限，其它预置角色 permissions 若被改坏不会自动修复  
-- **移除用户最后一个角色**目前无拦截，可能导致零角色 → 全站 403  
-- **`ListUserRoles` 不过滤 `unknown`**：若 IAM 仍残留 `unknown` 绑定，会投影为无权限的 `g`
-
-### P2 — 体验
-
-- **`PUT /central/v1/iam/me`** 不在自助白名单，也无对应 `PermissionRules` → 非超管类角色改昵称/头像可能 403  
-- **`home:view`** 权限码无后端 HTTP 映射，仅前端导航使用  
-- Casbin 拒绝返回 **403**，前端仅在 **401** 清 token → 用户易误判为「登录坏了」
-
-若后续要改代码，建议优先：**单一真相源（去掉手工 SQL 依赖）、加固全量同步、bootstrap 增量写 Casbin、启动时修复全部预置角色权限**。
+若后续继续改代码，建议优先：**去掉 `init_policy.sql` 手工依赖**、**启动时修复全部预置角色 permissions**、**禁止移除用户最后一个角色**。
 
 ---
 
@@ -230,4 +254,4 @@ Local 配置可能指向 `happyeat_remote` 等其它库；**诊断与线上务�
 
 ---
 
-*文档版本：2026-07-03，对应 happyeat IAM/Casbin 重构及 unknown 清理之后的状态。*
+*文档版本：2026-07-03（`24b1b2f` unknown 清理与 IAM 同步；`050e0d4` 角色 CRUD 增量 Casbin）。*

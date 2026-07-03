@@ -182,6 +182,7 @@ IAM（PostgreSQL）
 | B5 | 删角色 / 删用户误伤全员 | 删除后无关用户权限异常 | 删用户曾触发全量 Casbin 重建 | 删用户改 `RemoveAllUserCasbinGroupings`；删角色后补全受影响用户 `g` |
 | B6 | 全量同步 `g` 不可靠 | 同步后丢 dev-admin 绑定、遗留孤儿 `g` | 「先 Remove 全部 g 再 Add」+ adapter 静默失败 | 全量同步的 `g` 部分改为逐用户 `EnsureUserCasbinGroupings` |
 | B7 | 预置角色展示英文 | 员工看到 `cashier` 等 code | DB `role_name` 未回填 | `PresetRoleNames` + API `role_names` + 前端 `resolveRoleDisplayName` |
+| B8 | 已删角色仍显示 | 权限页侧边栏还能看到已删自定义角色 | 后端 IAM 已软删；前端 localStorage / `roleConfig` 合并旧数据 | Web：`applyRemoteRoleConfig` 以服务端为准整表替换；角色列表仅取自 `listIAMRoles` |
 
 ### 7.2 仍待观察 / 未修复
 

@@ -1,6 +1,8 @@
 package svc
 
 import (
+	"context"
+	"fmt"
 	"strings"
 
 	"github.com/solikewind/happyeat/app/internal/pkg/casbinrules"
@@ -62,6 +64,101 @@ func EnsureUserCasbinGroupings(store *RbacStore, ce *CasbinEnforcer, userCode st
 	return nil
 }
 
+func userCodeFromContext(ctx context.Context) string {
+	if v := ctx.Value("user_code"); v != nil {
+		if s := stringifyContextValue(v); s != "" {
+			return s
+		}
+	}
+	if v := ctx.Value("sub"); v != nil {
+		return stringifyContextValue(v)
+	}
+	return ""
+}
+
+func stringifyContextValue(v any) string {
+	switch x := v.(type) {
+	case string:
+		return strings.TrimSpace(x)
+	case fmt.Stringer:
+		return strings.TrimSpace(x.String())
+	default:
+		s := strings.TrimSpace(fmt.Sprint(x))
+		if s == "" || s == "<nil>" {
+			return ""
+		}
+		return s
+	}
+}
+
+// EnsureActorCasbinGroupings 按 IAM 对齐当前登录用户在 Casbin 中的 g 策略（角色权限变更后防止操作者自身 403）。
+func EnsureActorCasbinGroupings(ctx context.Context, store *RbacStore, ce *CasbinEnforcer) error {
+	if userCode := userCodeFromContext(ctx); userCode != "" {
+		return EnsureUserCasbinGroupings(store, ce, userCode)
+	}
+	return nil
+}
+
+// RemoveAllUserCasbinGroupings 移除某用户在 Casbin 中的全部分组（删用户时用，避免全量重建）。
+func RemoveAllUserCasbinGroupings(ce *CasbinEnforcer, userCode string) error {
+	userCode = strings.TrimSpace(userCode)
+	if userCode == "" {
+		return nil
+	}
+	existing, err := ce.Enforcer.GetFilteredGroupingPolicy(0, userCode)
+	if err != nil {
+		return err
+	}
+	for _, g := range existing {
+		if len(g) < 2 {
+			continue
+		}
+		if _, err := ce.Enforcer.RemoveGroupingPolicy(userCode, g[1]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// EnsureUserCasbinGroupingsForUsers 批量对齐多个用户的 Casbin g 策略（去重、忽略空 user_code）。
+func EnsureUserCasbinGroupingsForUsers(store *RbacStore, ce *CasbinEnforcer, userCodes []string) error {
+	seen := make(map[string]struct{}, len(userCodes))
+	for _, userCode := range userCodes {
+		userCode = strings.TrimSpace(userCode)
+		if userCode == "" {
+			continue
+		}
+		if _, ok := seen[userCode]; ok {
+			continue
+		}
+		seen[userCode] = struct{}{}
+		if err := EnsureUserCasbinGroupings(store, ce, userCode); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ReplaceRolePoliciesInCasbin 仅替换某角色在 Casbin 中的 p 策略，不触碰用户 g 绑定。
+func ReplaceRolePoliciesInCasbin(ce *CasbinEnforcer, roleCode string, permissions []string) error {
+	enforcer := ce.Enforcer
+	filtered, err := enforcer.GetFilteredPolicy(0, roleCode)
+	if err != nil {
+		return err
+	}
+	if len(filtered) > 0 {
+		if _, err = enforcer.RemovePolicies(filtered); err != nil {
+			return err
+		}
+	}
+	for _, policy := range BuildPoliciesForPermissions(permissions) {
+		if _, err = enforcer.AddPolicy(roleCode, policy.Obj, policy.Act); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // RemoveRolePoliciesFromCasbin 增量移除某角色的 p 策略与相关用户的 g 绑定（删除角色时用，避免全量重建 Casbin）。
 func RemoveRolePoliciesFromCasbin(ce *CasbinEnforcer, roleCode string, userCodes, permissions []string) error {
 	for _, policy := range BuildPoliciesForPermissions(permissions) {
@@ -105,20 +202,9 @@ func SyncRolePoliciesToCasbin(store *RbacStore, ce *CasbinEnforcer) error {
 	if err != nil {
 		return err
 	}
-	grouping, err := enforcer.GetGroupingPolicy()
-	if err != nil {
-		return err
-	}
-	if len(grouping) > 0 {
-		if _, err = enforcer.RemoveGroupingPolicies(grouping); err != nil {
+	for userCode := range users {
+		if err := EnsureUserCasbinGroupings(store, ce, userCode); err != nil {
 			return err
-		}
-	}
-	for userID, userRoles := range users {
-		for _, role := range userRoles {
-			if _, err = enforcer.AddGroupingPolicy(userID, role); err != nil {
-				return err
-			}
 		}
 	}
 	return nil

@@ -28,7 +28,18 @@ func NewGetIAMRoleLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetIAM
 }
 
 func (l *GetIAMRoleLogic) GetIAMRole(req *types.GetIAMRoleReq) (resp *types.GetIAMRoleReply, err error) {
-	// todo: add your logic here and delete this line
-
-	return
+	if req.Id == 0 {
+		return nil, errInvalid("id 不能为空")
+	}
+	role, err := l.svcCtx.Rbac.GetIAMRoleByID(req.Id)
+	if err != nil {
+		return nil, errInvalid(err.Error())
+	}
+	return &types.GetIAMRoleReply{
+		Role: types.IAMRoleItem{
+			Id:       role.ID,
+			RoleCode: role.RoleCode,
+			RoleName: role.RoleName,
+		},
+	}, nil
 }

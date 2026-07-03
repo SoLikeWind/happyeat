@@ -40,9 +40,12 @@ func (l *CreateIAMRoleLogic) CreateIAMRole(req *types.CreateIAMRoleReq) (resp *t
 		if err := l.svcCtx.Rbac.UpdateRole(roleCode, req.Permissions); err != nil {
 			return nil, errInvalid(err.Error())
 		}
-		if err := svc.SyncRolePoliciesToCasbin(l.svcCtx.Rbac, l.svcCtx.Casbin); err != nil {
+		if err := svc.ReplaceRolePoliciesInCasbin(l.svcCtx.Casbin, roleCode, req.Permissions); err != nil {
 			return nil, errInvalid("同步 Casbin 策略失败")
 		}
+	}
+	if err := svc.EnsureActorCasbinGroupings(l.ctx, l.svcCtx.Rbac, l.svcCtx.Casbin); err != nil {
+		return nil, errInvalid("同步 Casbin 用户角色失败")
 	}
 	return &types.CreateIAMRoleReply{Id: id}, nil
 }

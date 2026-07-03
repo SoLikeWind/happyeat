@@ -6,6 +6,7 @@ package iam
 import (
 	"context"
 
+	"github.com/solikewind/happyeat/app/internal/pkg/casbinrules"
 	"github.com/solikewind/happyeat/app/internal/svc"
 	"github.com/solikewind/happyeat/app/internal/types"
 
@@ -44,6 +45,9 @@ func (l *ListIAMRolesLogic) ListIAMRoles(req *types.ListIAMRolesReq) (resp *type
 	}
 	items := make([]types.IAMRoleItem, 0, len(rows))
 	for _, row := range rows {
+		if row.RoleCode == casbinrules.UnknownRoleCode {
+			continue
+		}
 		items = append(items, types.IAMRoleItem{
 			Id:       row.ID,
 			RoleCode: row.RoleCode,

@@ -13,6 +13,7 @@ import (
 	"github.com/solikewind/happyeat/dal/model/ent/menucategory"
 	"github.com/solikewind/happyeat/dal/model/ent/menuspec"
 	"github.com/solikewind/happyeat/dal/model/ent/object"
+	"github.com/solikewind/happyeat/dal/model/ent/operationlog"
 	"github.com/solikewind/happyeat/dal/model/ent/order"
 	"github.com/solikewind/happyeat/dal/model/ent/orderitem"
 	"github.com/solikewind/happyeat/dal/model/ent/schema"
@@ -361,6 +362,75 @@ func init() {
 	objectDescHash := objectFields[6].Descriptor()
 	// object.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	object.HashValidator = objectDescHash.Validators[0].(func(string) error)
+	operationlogMixin := schema.OperationLog{}.Mixin()
+	operationlogMixinHooks0 := operationlogMixin[0].Hooks()
+	operationlog.Hooks[0] = operationlogMixinHooks0[0]
+	operationlogMixinFields1 := operationlogMixin[1].Fields()
+	_ = operationlogMixinFields1
+	operationlogFields := schema.OperationLog{}.Fields()
+	_ = operationlogFields
+	// operationlogDescCreatedAt is the schema descriptor for created_at field.
+	operationlogDescCreatedAt := operationlogMixinFields1[0].Descriptor()
+	// operationlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	operationlog.DefaultCreatedAt = operationlogDescCreatedAt.Default.(func() time.Time)
+	// operationlogDescUpdatedAt is the schema descriptor for updated_at field.
+	operationlogDescUpdatedAt := operationlogMixinFields1[1].Descriptor()
+	// operationlog.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	operationlog.DefaultUpdatedAt = operationlogDescUpdatedAt.Default.(func() time.Time)
+	// operationlog.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	operationlog.UpdateDefaultUpdatedAt = operationlogDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// operationlogDescActorUserCode is the schema descriptor for actor_user_code field.
+	operationlogDescActorUserCode := operationlogFields[0].Descriptor()
+	// operationlog.ActorUserCodeValidator is a validator for the "actor_user_code" field. It is called by the builders before save.
+	operationlog.ActorUserCodeValidator = operationlogDescActorUserCode.Validators[0].(func(string) error)
+	// operationlogDescModule is the schema descriptor for module field.
+	operationlogDescModule := operationlogFields[1].Descriptor()
+	// operationlog.ModuleValidator is a validator for the "module" field. It is called by the builders before save.
+	operationlog.ModuleValidator = operationlogDescModule.Validators[0].(func(string) error)
+	// operationlogDescAction is the schema descriptor for action field.
+	operationlogDescAction := operationlogFields[2].Descriptor()
+	// operationlog.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	operationlog.ActionValidator = operationlogDescAction.Validators[0].(func(string) error)
+	// operationlogDescMethod is the schema descriptor for method field.
+	operationlogDescMethod := operationlogFields[3].Descriptor()
+	// operationlog.MethodValidator is a validator for the "method" field. It is called by the builders before save.
+	operationlog.MethodValidator = operationlogDescMethod.Validators[0].(func(string) error)
+	// operationlogDescPath is the schema descriptor for path field.
+	operationlogDescPath := operationlogFields[4].Descriptor()
+	// operationlog.PathValidator is a validator for the "path" field. It is called by the builders before save.
+	operationlog.PathValidator = operationlogDescPath.Validators[0].(func(string) error)
+	// operationlogDescNormalizedPath is the schema descriptor for normalized_path field.
+	operationlogDescNormalizedPath := operationlogFields[5].Descriptor()
+	// operationlog.NormalizedPathValidator is a validator for the "normalized_path" field. It is called by the builders before save.
+	operationlog.NormalizedPathValidator = operationlogDescNormalizedPath.Validators[0].(func(string) error)
+	// operationlogDescStatus is the schema descriptor for status field.
+	operationlogDescStatus := operationlogFields[6].Descriptor()
+	// operationlog.DefaultStatus holds the default value on creation for the status field.
+	operationlog.DefaultStatus = operationlogDescStatus.Default.(int)
+	// operationlogDescTargetID is the schema descriptor for target_id field.
+	operationlogDescTargetID := operationlogFields[7].Descriptor()
+	// operationlog.DefaultTargetID holds the default value on creation for the target_id field.
+	operationlog.DefaultTargetID = operationlogDescTargetID.Default.(string)
+	// operationlog.TargetIDValidator is a validator for the "target_id" field. It is called by the builders before save.
+	operationlog.TargetIDValidator = operationlogDescTargetID.Validators[0].(func(string) error)
+	// operationlogDescIP is the schema descriptor for ip field.
+	operationlogDescIP := operationlogFields[8].Descriptor()
+	// operationlog.DefaultIP holds the default value on creation for the ip field.
+	operationlog.DefaultIP = operationlogDescIP.Default.(string)
+	// operationlog.IPValidator is a validator for the "ip" field. It is called by the builders before save.
+	operationlog.IPValidator = operationlogDescIP.Validators[0].(func(string) error)
+	// operationlogDescUserAgent is the schema descriptor for user_agent field.
+	operationlogDescUserAgent := operationlogFields[9].Descriptor()
+	// operationlog.DefaultUserAgent holds the default value on creation for the user_agent field.
+	operationlog.DefaultUserAgent = operationlogDescUserAgent.Default.(string)
+	// operationlog.UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
+	operationlog.UserAgentValidator = operationlogDescUserAgent.Validators[0].(func(string) error)
+	// operationlogDescSummary is the schema descriptor for summary field.
+	operationlogDescSummary := operationlogFields[10].Descriptor()
+	// operationlog.DefaultSummary holds the default value on creation for the summary field.
+	operationlog.DefaultSummary = operationlogDescSummary.Default.(string)
+	// operationlog.SummaryValidator is a validator for the "summary" field. It is called by the builders before save.
+	operationlog.SummaryValidator = operationlogDescSummary.Validators[0].(func(string) error)
 	orderMixin := schema.Order{}.Mixin()
 	orderMixinHooks0 := orderMixin[0].Hooks()
 	orderMixinHooks2 := orderMixin[2].Hooks()

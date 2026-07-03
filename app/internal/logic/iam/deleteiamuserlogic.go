@@ -44,7 +44,7 @@ func (l *DeleteIAMUserLogic) DeleteIAMUser(req *types.DeleteIAMUserReq) (resp *t
 	if err := l.svcCtx.Rbac.DeleteUserByID(req.Id); err != nil {
 		return nil, errInvalid(err.Error())
 	}
-	if err := svc.SyncRolePoliciesToCasbin(l.svcCtx.Rbac, l.svcCtx.Casbin); err != nil {
+	if err := svc.RemoveAllUserCasbinGroupings(l.svcCtx.Casbin, detail.UserCode); err != nil {
 		return nil, errInvalid("同步 Casbin 策略失败")
 	}
 	return &types.DeleteIAMUserReply{}, nil

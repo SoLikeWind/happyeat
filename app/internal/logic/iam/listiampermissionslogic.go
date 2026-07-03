@@ -45,6 +45,7 @@ func (l *ListIAMPermissionsLogic) ListIAMPermissions(req *types.ListIAMPermissio
 	items := make([]types.PermissionItem, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, types.PermissionItem{
+			Id:          row.ID,
 			Code:        row.Code,
 			Description: row.Description,
 		})

@@ -27,6 +27,7 @@ type IAMUserItem {
 	DisplayName    string   `json:"display_name"`
 	Phone          string   `json:"phone"`
 	Roles          []string `json:"roles"`
+	RoleNames      []string `json:"role_names"` // 与 roles 一一对应的中文展示名
 	AvatarObjectId uint64   `json:"avatar_object_id,string"`
 	AvatarUrl      string   `json:"avatar_url"`
 	HasPassword    bool     `json:"has_password"`

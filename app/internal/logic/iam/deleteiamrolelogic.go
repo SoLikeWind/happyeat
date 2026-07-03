@@ -18,7 +18,7 @@ type DeleteIAMRoleLogic struct {
 	svcCtx *svc.ServiceContext
 }
 
-// 删除角色（软删；系统预置角色不可删；删除后全量同步 Casbin）
+// 删除角色（软删；系统预置角色不可删；删除后增量同步 Casbin）
 func NewDeleteIAMRoleLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DeleteIAMRoleLogic {
 	return &DeleteIAMRoleLogic{
 		Logger: logx.WithContext(ctx),
@@ -31,11 +31,18 @@ func (l *DeleteIAMRoleLogic) DeleteIAMRole(req *types.DeleteIAMRoleReq) (resp *t
 	if req.Id == 0 {
 		return nil, errInvalid("id 不能为空")
 	}
-	if err := l.svcCtx.Rbac.DeleteRoleByID(req.Id); err != nil {
+	outcome, err := l.svcCtx.Rbac.DeleteRoleByID(req.Id)
+	if err != nil {
 		return nil, errInvalid(err.Error())
 	}
-	if err := svc.SyncRolePoliciesToCasbin(l.svcCtx.Rbac, l.svcCtx.Casbin); err != nil {
+	if err := svc.RemoveRolePoliciesFromCasbin(l.svcCtx.Casbin, outcome.RoleCode, outcome.UserCodes, outcome.Permissions); err != nil {
 		return nil, errInvalid("同步 Casbin 策略失败")
+	}
+	if err := svc.EnsureUserCasbinGroupingsForUsers(l.svcCtx.Rbac, l.svcCtx.Casbin, outcome.UserCodes); err != nil {
+		return nil, errInvalid("同步 Casbin 用户角色失败")
+	}
+	if err := svc.EnsureActorCasbinGroupings(l.ctx, l.svcCtx.Rbac, l.svcCtx.Casbin); err != nil {
+		return nil, errInvalid("同步 Casbin 用户角色失败")
 	}
 	return &types.DeleteIAMRoleReply{}, nil
 }

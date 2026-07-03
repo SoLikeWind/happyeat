@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	audit "github.com/solikewind/happyeat/app/internal/handler/audit"
 	auth "github.com/solikewind/happyeat/app/internal/handler/auth"
 	iam "github.com/solikewind/happyeat/app/internal/handler/iam"
 	menu "github.com/solikewind/happyeat/app/internal/handler/menu"
@@ -25,6 +26,23 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.CasbinMiddleware},
+			[]rest.Route{
+				{
+					// 分页查询后台操作日志
+					Method:  http.MethodGet,
+					Path:    "/operation-logs",
+					Handler: audit.ListOperationLogsHandler(serverCtx),
+				},
+			}...,
+		),
+		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
+		rest.WithPrefix("/central/v1"),
+		rest.WithTimeout(5000*time.Millisecond),
+	)
+
 	server.AddRoutes(
 		[]rest.Route{
 			{

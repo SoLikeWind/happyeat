@@ -5,11 +5,14 @@ package iam
 import (
 	"context"
 	"errors"
+	"strings"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/solikewind/happyeat/dal/model/ent"
 	"github.com/solikewind/happyeat/dal/model/ent/iampermission"
 	"github.com/solikewind/happyeat/dal/model/ent/iamrole"
 	"github.com/solikewind/happyeat/dal/model/ent/iamuser"
+	"github.com/solikewind/happyeat/dal/model/ent/schema"
 )
 
 // ErrPermissionsNotFound 覆盖角色权限时存在无效权限码。
@@ -50,9 +53,20 @@ func (m *IAM) RoleExists(ctx context.Context, roleCode string) (bool, error) {
 	return m.c.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Exist(ctx)
 }
 
+// GetRoleByCode 按 role_code 获取角色。
+func (m *IAM) GetRoleByCode(ctx context.Context, roleCode string) (*ent.IAMRole, error) {
+	return m.c.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(ctx)
+}
+
 // GetRoleByID 按 ID 获取角色。
 func (m *IAM) GetRoleByID(ctx context.Context, id uint64) (*ent.IAMRole, error) {
 	return m.c.IAMRole.Query().Where(iamrole.IDEQ(id)).Only(ctx)
+}
+
+// UpdateRoleNameByID 按 ID 更新角色展示名。
+func (m *IAM) UpdateRoleNameByID(ctx context.Context, id uint64, roleName string) error {
+	_, err := m.c.IAMRole.UpdateOneID(id).SetRoleName(roleName).Save(ctx)
+	return err
 }
 
 // CreateRole 创建角色。
@@ -60,18 +74,83 @@ func (m *IAM) CreateRole(ctx context.Context, roleCode, roleName string) (*ent.I
 	return m.c.IAMRole.Create().SetRoleCode(roleCode).SetRoleName(roleName).Save(ctx)
 }
 
-// EnsureRole 角色不存在时创建。
+// EnsureRole 角色不存在时创建；已存在时若展示名为空或与 role_code 相同则回填中文名。
 func (m *IAM) EnsureRole(ctx context.Context, roleCode, roleName string) error {
 	exists, err := m.RoleExists(ctx, roleCode)
 	if err != nil {
 		return err
 	}
-	if exists {
+	if !exists {
+		_, err = m.CreateRole(ctx, roleCode, roleName)
+		if err != nil && isUniqueViolation(err) {
+			return m.reactivateSoftDeletedRole(ctx, roleCode, roleName)
+		}
+		return err
+	}
+	roleName = strings.TrimSpace(roleName)
+	if roleName == "" {
 		return nil
 	}
-	_, err = m.CreateRole(ctx, roleCode, roleName)
+	row, err := m.c.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(ctx)
+	if err != nil {
+		return err
+	}
+	current := strings.TrimSpace(row.RoleName)
+	if current != "" && !strings.EqualFold(current, roleCode) {
+		return nil
+	}
+	if strings.EqualFold(roleName, roleCode) {
+		return nil
+	}
+	_, err = m.c.IAMRole.UpdateOneID(row.ID).SetRoleName(roleName).Save(ctx)
 	return err
 }
+
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
+func (m *IAM) reactivateSoftDeletedRole(ctx context.Context, roleCode, roleName string) error {
+	skipCtx := schema.SkipSoftDelete(ctx)
+	row, err := m.c.IAMRole.Query().
+		Where(iamrole.RoleCodeEQ(roleCode)).
+		Only(skipCtx)
+	if err != nil {
+		return err
+	}
+	updater := m.c.IAMRole.UpdateOneID(row.ID).SetDeleteTs(0)
+	if name := strings.TrimSpace(roleName); name != "" {
+		updater.SetRoleName(name)
+	}
+	_, err = updater.Save(skipCtx)
+	return err
+}
+
+// UsersWithRole 返回绑定了指定角色的 user_code 列表。
+func (m *IAM) UsersWithRole(ctx context.Context, roleCode string) ([]string, error) {
+	rows, err := m.c.IAMUser.Query().
+		Where(iamuser.HasRolesWith(iamrole.RoleCodeEQ(roleCode))).
+		Order(ent.Asc(iamuser.FieldUserCode)).
+		All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, row.UserCode)
+	}
+	return out, nil
+}
+
+// CountUserRoles 统计用户当前绑定的角色数量。
+func (m *IAM) CountUserRoles(ctx context.Context, userCode string) (int, error) {
+	return m.c.IAMUser.Query().
+		Where(iamuser.UserCodeEQ(userCode)).
+		QueryRoles().
+		Count(ctx)
+}
+
 
 // DeleteRoleByID 软删角色。
 func (m *IAM) DeleteRoleByID(ctx context.Context, id uint64) error {
@@ -119,6 +198,24 @@ func (m *IAM) RolePermissionsMap(ctx context.Context) (map[string][]string, erro
 	return out, nil
 }
 
+// RolePermissions 按角色编码获取权限码集合（升序）。
+func (m *IAM) RolePermissions(ctx context.Context, roleCode string) ([]string, error) {
+	role, err := m.c.IAMRole.Query().
+		Where(iamrole.RoleCodeEQ(roleCode)).
+		WithPermissions(func(q *ent.IAMPermissionQuery) {
+			q.Order(ent.Asc(iampermission.FieldPermissionCode))
+		}).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(role.Edges.Permissions))
+	for _, p := range role.Edges.Permissions {
+		out = append(out, p.PermissionCode)
+	}
+	return out, nil
+}
+
 // RolePermissionsCount 角色-权限关联总数（用于判断是否需要种子）。
 func (m *IAM) RolePermissionsCount(ctx context.Context) (int, error) {
 	return m.c.IAMRole.Query().QueryPermissions().Count(ctx)
@@ -158,6 +255,11 @@ func (m *IAM) SetRolePermissions(ctx context.Context, roleCode string, permCodes
 }
 
 // ---------------- 权限点 ----------------
+
+// GetPermissionByID 按 ID 获取权限点。
+func (m *IAM) GetPermissionByID(ctx context.Context, id uint64) (*ent.IAMPermission, error) {
+	return m.c.IAMPermission.Query().Where(iampermission.IDEQ(id)).Only(ctx)
+}
 
 // EnsurePermission 权限点不存在时创建。
 func (m *IAM) EnsurePermission(ctx context.Context, code, description string) error {
@@ -370,18 +472,50 @@ func (m *IAM) AddUserRole(ctx context.Context, userCode, roleCode string) error 
 	return err
 }
 
-// RemoveUserRole 解绑角色。
+// RemoveUserRole 解绑角色；角色已软删时仍可解除历史绑定。
 func (m *IAM) RemoveUserRole(ctx context.Context, userCode, roleCode string) error {
+	return m.removeUserRole(ctx, userCode, roleCode, false)
+}
+
+// RemoveUserRoleIfExists 解绑角色（角色/绑定不存在时幂等成功）。
+func (m *IAM) RemoveUserRoleIfExists(ctx context.Context, userCode, roleCode string) error {
+	return m.removeUserRole(ctx, userCode, roleCode, true)
+}
+
+func (m *IAM) removeUserRole(ctx context.Context, userCode, roleCode string, quiet bool) error {
 	userEnt, err := m.c.IAMUser.Query().Where(iamuser.UserCodeEQ(userCode)).Only(ctx)
 	if err != nil {
+		if quiet && ent.IsNotFound(err) {
+			return nil
+		}
 		return err
 	}
-	roleEnt, err := m.c.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(ctx)
+	roleEnt, err := m.findRoleByCode(ctx, roleCode)
 	if err != nil {
+		if quiet {
+			return nil
+		}
 		return err
+	}
+	has, err := m.c.IAMUser.Query().
+		Where(iamuser.IDEQ(userEnt.ID), iamuser.HasRolesWith(iamrole.IDEQ(roleEnt.ID))).
+		Exist(ctx)
+	if err != nil || !has {
+		return nil
 	}
 	_, err = m.c.IAMUser.UpdateOneID(userEnt.ID).RemoveRoleIDs(roleEnt.ID).Save(ctx)
 	return err
+}
+
+func (m *IAM) findRoleByCode(ctx context.Context, roleCode string) (*ent.IAMRole, error) {
+	row, err := m.c.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(ctx)
+	if err == nil {
+		return row, nil
+	}
+	if !ent.IsNotFound(err) {
+		return nil, err
+	}
+	return m.c.IAMRole.Query().Where(iamrole.RoleCodeEQ(roleCode)).Only(schema.SkipSoftDelete(ctx))
 }
 
 // IsNotFound 透出 ent NotFound 判断，供上层翻译错误。

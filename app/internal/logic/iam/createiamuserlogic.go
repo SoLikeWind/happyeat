@@ -53,9 +53,9 @@ func (l *CreateIAMUserLogic) CreateIAMUser(req *types.CreateIAMUserReq) (resp *t
 		if err := l.svcCtx.Rbac.AssignUserRole(realUserCode, rc); err != nil {
 			return nil, errInvalid(err.Error())
 		}
-		if err := svc.SyncUserRoleGroupingAdd(l.svcCtx.Casbin, realUserCode, rc); err != nil {
-			return nil, errInvalid("同步 Casbin 用户角色失败")
-		}
+	}
+	if err := svc.EnsureUserCasbinGroupings(l.svcCtx.Rbac, l.svcCtx.Casbin, realUserCode); err != nil {
+		return nil, errInvalid("同步 Casbin 用户角色失败")
 	}
 
 	// 可选：设置头像。

@@ -15,4 +15,5 @@ type LoginReply {
 	UserCode    string   `json:"user_code"`
 	Role        string   `json:"role"` // 前端菜单/按钮权限主角色
 	Roles       []string `json:"roles"` // IAM 绑定的全部角色
+	RoleNames   []string `json:"role_names"` // 与 roles 一一对应的中文展示名
 }

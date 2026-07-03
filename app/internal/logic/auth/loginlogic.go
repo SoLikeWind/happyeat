@@ -68,7 +68,7 @@ func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginReply, error) {
 		return nil, err
 	}
 
-	primaryRole := user.Roles[0]
+	primaryRole := svc.PickPrimaryRole(user.Roles)
 	secret := l.svcCtx.Config.Auth.AccessSecret
 	expire := l.svcCtx.Config.Auth.AccessExpire
 	if expire <= 0 {
@@ -98,5 +98,6 @@ func (l *LoginLogic) Login(req *types.LoginReq) (*types.LoginReply, error) {
 		UserCode:    user.UserCode,
 		Role:        primaryRole,
 		Roles:       user.Roles,
+		RoleNames:   user.RoleNames,
 	}, nil
 }

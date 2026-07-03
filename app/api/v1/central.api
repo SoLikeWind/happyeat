@@ -21,6 +21,7 @@ import "iamtypes.api"
 import "storagetypes.api"
 import "statstypes.api"
 import "settlementtypes.api"
+import "audittypes.api"
 
 // 登录接口（无需 JWT），获取 token 后用于其他接口的 Authorization: Bearer <token>
 @server (
@@ -320,6 +321,20 @@ service HappyEatService {
 	@doc "将 IAM 同步到 Casbin（刷新 casbin_rule，供管理端按钮触发）"
 	@handler SyncCasbinPolicies
 	post /rbac/casbin/sync (SyncCasbinPoliciesReq) returns (SyncCasbinPoliciesReply)
+}
+
+@server (
+	jwt:        Auth
+	authType:   Bearer
+	middleware: CasbinMiddleware
+	prefix:     /central/v1
+	group:      audit
+	timeout:    5s
+)
+service HappyEatService {
+	@doc "分页查询后台操作日志"
+	@handler ListOperationLogs
+	get /operation-logs (ListOperationLogsReq) returns (ListOperationLogsReply)
 }
 
 // IAM：权限点/角色/用户目录与用户-角色维护（与 /rbac/* 矩阵配置互补）

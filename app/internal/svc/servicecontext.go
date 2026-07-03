@@ -14,6 +14,7 @@ import (
 	"github.com/solikewind/happyeat/app/internal/pkg/agent"
 	"github.com/solikewind/happyeat/app/internal/pkg/cos"
 	"github.com/solikewind/happyeat/app/internal/pkg/spyun"
+	auditmodel "github.com/solikewind/happyeat/dal/model/audit"
 	"github.com/solikewind/happyeat/dal/model/ent"
 	_ "github.com/solikewind/happyeat/dal/model/ent/runtime"
 	"github.com/solikewind/happyeat/dal/model/menu"
@@ -46,8 +47,9 @@ type ServiceContext struct {
 	Table     *table.Table     // 餐桌 data 层
 	TableType *table.TableType // 餐桌分类 data 层
 
-	Order *order.Order // 订单 data 层
-	Object *objmodel.Object
+	Order      *order.Order // 订单 data 层
+	Object     *objmodel.Object
+	Audit      *auditmodel.Audit
 	Settlement *settlement.Settlement // 结账单 data 层
 }
 
@@ -109,6 +111,7 @@ func NewServiceContext(c config.Config) (*ServiceContext, error) {
 		TableType:    table.NewTableType(client),
 		Order:        order.NewOrder(client),
 		Object:       objmodel.NewObject(client),
+		Audit:        auditmodel.NewAudit(client),
 		Settlement:   settlement.NewSettlement(client),
 	}
 	ctx.CasbinMiddleware = NewCasbinMiddleware(ctx)

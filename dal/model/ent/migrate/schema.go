@@ -215,6 +215,30 @@ var (
 			},
 		},
 	}
+	// OperationLogsColumns holds the columns for the "operation_logs" table.
+	OperationLogsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUint64, Increment: true, Comment: "ID"},
+		{Name: "created_at", Type: field.TypeTime, Comment: "创建时间", SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "updated_at", Type: field.TypeTime, Comment: "更新时间", SchemaType: map[string]string{"postgres": "timestamptz"}},
+		{Name: "actor_user_code", Type: field.TypeString, Size: 128, Comment: "操作者 user_code"},
+		{Name: "module", Type: field.TypeString, Size: 64, Comment: "业务模块"},
+		{Name: "action", Type: field.TypeString, Size: 64, Comment: "动作"},
+		{Name: "method", Type: field.TypeString, Size: 16, Comment: "HTTP 方法"},
+		{Name: "path", Type: field.TypeString, Size: 512, Comment: "原始请求路径"},
+		{Name: "normalized_path", Type: field.TypeString, Size: 512, Comment: "归一化路径"},
+		{Name: "status", Type: field.TypeInt, Comment: "响应状态码", Default: 0},
+		{Name: "target_id", Type: field.TypeString, Size: 128, Comment: "目标 ID（从路径提取，可能为空）", Default: ""},
+		{Name: "ip", Type: field.TypeString, Size: 128, Comment: "客户端 IP", Default: ""},
+		{Name: "user_agent", Type: field.TypeString, Size: 512, Comment: "User-Agent", Default: ""},
+		{Name: "summary", Type: field.TypeString, Size: 512, Comment: "操作摘要", Default: ""},
+	}
+	// OperationLogsTable holds the schema information for the "operation_logs" table.
+	OperationLogsTable = &schema.Table{
+		Name:       "operation_logs",
+		Comment:    "后台操作审计日志",
+		Columns:    OperationLogsColumns,
+		PrimaryKey: []*schema.Column{OperationLogsColumns[0]},
+	}
 	// OrdersColumns holds the columns for the "orders" table.
 	OrdersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUint64, Increment: true, Comment: "ID"},
@@ -453,6 +477,7 @@ var (
 		MenuCategoriesTable,
 		MenuSpecsTable,
 		ObjectsTable,
+		OperationLogsTable,
 		OrdersTable,
 		OrderItemsTable,
 		SettlementsTable,
@@ -496,6 +521,9 @@ func init() {
 	}
 	ObjectsTable.Annotation = &entsql.Annotation{
 		Table: "objects",
+	}
+	OperationLogsTable.Annotation = &entsql.Annotation{
+		Table: "operation_logs",
 	}
 	OrdersTable.ForeignKeys[0].RefTable = SettlementsTable
 	OrdersTable.ForeignKeys[1].RefTable = TablesTable

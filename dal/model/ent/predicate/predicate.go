@@ -30,6 +30,9 @@ type MenuSpec func(*sql.Selector)
 // Object is the predicate function for object builders.
 type Object func(*sql.Selector)
 
+// OperationLog is the predicate function for operationlog builders.
+type OperationLog func(*sql.Selector)
+
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
 

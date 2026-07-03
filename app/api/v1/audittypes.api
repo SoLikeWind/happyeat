@@ -1,0 +1,39 @@
+syntax = "v1"
+
+info (
+	title:   "HappyEat 操作日志 APITypes"
+	author:  "Goxny"
+	version: "v1.0.0"
+)
+
+import "../base/base.api"
+
+type OperationLogItem {
+	Id             uint64 `json:"id,string"`
+	ActorUserCode  string `json:"actor_user_code"`
+	Module         string `json:"module"`
+	Action         string `json:"action"`
+	Method         string `json:"method"`
+	Path           string `json:"path"`
+	NormalizedPath string `json:"normalized_path"`
+	Status         int    `json:"status"`
+	TargetId       string `json:"target_id"`
+	Ip             string `json:"ip"`
+	UserAgent      string `json:"user_agent"`
+	Summary        string `json:"summary"`
+	CreatedAt      string `json:"created_at"`
+}
+
+type ListOperationLogsReq {
+	PageInfo
+	ActorUserCode string `json:"actor_user_code,optional" form:"actor_user_code,optional"`
+	Module        string `json:"module,optional" form:"module,optional"`
+	Action        string `json:"action,optional" form:"action,optional"`
+	Method        string `json:"method,optional" form:"method,optional"`
+	Keyword       string `json:"keyword,optional" form:"keyword,optional"` // path/summary/target_id 模糊搜索
+}
+
+type ListOperationLogsReply {
+	Logs  []OperationLogItem `json:"logs"`
+	Total int64              `json:"total"`
+}

@@ -10,6 +10,7 @@ type PolicyRule struct {
 // ValidPermissions 允许写入 RBAC 的权限码集合。
 var ValidPermissions = map[string]struct{}{
 	"permission:view":      {},
+	"audit:view":           {},
 	"home:view":            {},
 	"workbench:view":       {},
 	"workbench:complete":   {},
@@ -40,6 +41,7 @@ type PermissionSpec struct {
 
 var PermissionCatalog = []PermissionSpec{
 	{Code: "permission:view", Description: "查看和维护角色权限配置"},
+	{Code: "audit:view", Description: "查看后台操作日志"},
 	{Code: "home:view", Description: "查看首页"},
 	{Code: "workbench:view", Description: "查看工作台订单"},
 	{Code: "workbench:complete", Description: "完成工作台订单"},
@@ -87,6 +89,7 @@ var PermissionRules = map[string][]PolicyRule{
 		{Obj: "/central/v1/iam/user-roles", Act: "DELETE"},
 		{Obj: "/central/v1/iam/users/:id/reset-password", Act: "POST"},
 	},
+	"audit:view": {{Obj: "/central/v1/operation-logs", Act: "GET"}},
 	"workbench:view":       {{Obj: "/central/v1/workbench/orders", Act: "GET"}},
 	"workbench:complete":   {{Obj: "/central/v1/order/:id/status", Act: "PUT"}},
 	"orders:view":          {{Obj: "/central/v1/orders", Act: "GET"}, {Obj: "/central/v1/order/:id", Act: "GET"}},

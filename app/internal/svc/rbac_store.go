@@ -126,6 +126,7 @@ func (s *RbacStore) RemoveUserRole(userCode, roleCode string) error {
 
 // IAMPermissionListItem 分页列出权限点（供 IAM API 使用）。
 type IAMPermissionListItem struct {
+	ID          uint64
 	Code        string
 	Description string
 }
@@ -139,11 +140,28 @@ func (s *RbacStore) ListIAMPermissionsPage(ctx context.Context, offset, limit in
 	out := make([]IAMPermissionListItem, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, IAMPermissionListItem{
+			ID:          row.ID,
 			Code:        row.PermissionCode,
 			Description: row.Description,
 		})
 	}
 	return out, int64(total), nil
+}
+
+// GetIAMPermissionByID 读取单个权限点。
+func (s *RbacStore) GetIAMPermissionByID(id uint64) (*IAMPermissionListItem, error) {
+	row, err := s.iam.GetPermissionByID(context.Background(), id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("权限点不存在")
+		}
+		return nil, err
+	}
+	return &IAMPermissionListItem{
+		ID:          row.ID,
+		Code:        row.PermissionCode,
+		Description: row.Description,
+	}, nil
 }
 
 // IAMRoleListItem 分页列出角色。
@@ -170,6 +188,38 @@ func (s *RbacStore) ListIAMRolesPage(ctx context.Context, offset, limit int, key
 	return out, int64(total), nil
 }
 
+// GetIAMRoleByID 读取单个角色。
+func (s *RbacStore) GetIAMRoleByID(id uint64) (*IAMRoleListItem, error) {
+	row, err := s.iam.GetRoleByID(context.Background(), id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("角色不存在")
+		}
+		return nil, err
+	}
+	return &IAMRoleListItem{
+		ID:       row.ID,
+		RoleCode: row.RoleCode,
+		RoleName: row.RoleName,
+	}, nil
+}
+
+// UpdateRoleNameByID 更新角色展示名，role_code 保持不可变。
+func (s *RbacStore) UpdateRoleNameByID(id uint64, roleName string) error {
+	roleName = strings.TrimSpace(roleName)
+	if roleName == "" {
+		return errors.New("role_name 不能为空")
+	}
+	err := s.iam.UpdateRoleNameByID(context.Background(), id, roleName)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return errors.New("角色不存在")
+		}
+		return err
+	}
+	return nil
+}
+
 // CreateRole 创建自定义角色（role_code 创建后不可改）。
 func (s *RbacStore) CreateRole(roleCode, roleName string) (uint64, error) {
 	roleCode = strings.TrimSpace(strings.ToLower(roleCode))
@@ -192,6 +242,22 @@ func (s *RbacStore) CreateRole(roleCode, roleName string) (uint64, error) {
 		return 0, err
 	}
 	return row.ID, nil
+}
+
+// GetRolePermissions 返回单个角色的权限码集合。
+func (s *RbacStore) GetRolePermissions(roleCode string) ([]string, error) {
+	roleCode = strings.TrimSpace(roleCode)
+	if roleCode == "" {
+		return nil, errors.New("role 不能为空")
+	}
+	permissions, err := s.iam.RolePermissions(context.Background(), roleCode)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil, errors.New("role not found")
+		}
+		return nil, err
+	}
+	return permissions, nil
 }
 
 // DeleteRoleByID 软删角色；预置角色不可删。
@@ -584,6 +650,11 @@ func (s *RbacStore) seedDefaultMappings() error {
 			if err := s.UpdateRole(roleCode, permissions); err != nil {
 				return err
 			}
+		}
+	} else {
+		defaults := defaultRolePermissions()
+		if err := s.UpdateRole("super_admin", defaults["super_admin"]); err != nil {
+			return err
 		}
 	}
 	// dev-admin：开发态内置超管账号（占位手机号 + 默认密码 admin123），用 user_code 登录。

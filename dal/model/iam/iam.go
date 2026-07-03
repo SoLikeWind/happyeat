@@ -55,6 +55,12 @@ func (m *IAM) GetRoleByID(ctx context.Context, id uint64) (*ent.IAMRole, error) 
 	return m.c.IAMRole.Query().Where(iamrole.IDEQ(id)).Only(ctx)
 }
 
+// UpdateRoleNameByID 按 ID 更新角色展示名。
+func (m *IAM) UpdateRoleNameByID(ctx context.Context, id uint64, roleName string) error {
+	_, err := m.c.IAMRole.UpdateOneID(id).SetRoleName(roleName).Save(ctx)
+	return err
+}
+
 // CreateRole 创建角色。
 func (m *IAM) CreateRole(ctx context.Context, roleCode, roleName string) (*ent.IAMRole, error) {
 	return m.c.IAMRole.Create().SetRoleCode(roleCode).SetRoleName(roleName).Save(ctx)
@@ -119,6 +125,24 @@ func (m *IAM) RolePermissionsMap(ctx context.Context) (map[string][]string, erro
 	return out, nil
 }
 
+// RolePermissions 按角色编码获取权限码集合（升序）。
+func (m *IAM) RolePermissions(ctx context.Context, roleCode string) ([]string, error) {
+	role, err := m.c.IAMRole.Query().
+		Where(iamrole.RoleCodeEQ(roleCode)).
+		WithPermissions(func(q *ent.IAMPermissionQuery) {
+			q.Order(ent.Asc(iampermission.FieldPermissionCode))
+		}).
+		Only(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(role.Edges.Permissions))
+	for _, p := range role.Edges.Permissions {
+		out = append(out, p.PermissionCode)
+	}
+	return out, nil
+}
+
 // RolePermissionsCount 角色-权限关联总数（用于判断是否需要种子）。
 func (m *IAM) RolePermissionsCount(ctx context.Context) (int, error) {
 	return m.c.IAMRole.Query().QueryPermissions().Count(ctx)
@@ -158,6 +182,11 @@ func (m *IAM) SetRolePermissions(ctx context.Context, roleCode string, permCodes
 }
 
 // ---------------- 权限点 ----------------
+
+// GetPermissionByID 按 ID 获取权限点。
+func (m *IAM) GetPermissionByID(ctx context.Context, id uint64) (*ent.IAMPermission, error) {
+	return m.c.IAMPermission.Query().Where(iampermission.IDEQ(id)).Only(ctx)
+}
 
 // EnsurePermission 权限点不存在时创建。
 func (m *IAM) EnsurePermission(ctx context.Context, code, description string) error {

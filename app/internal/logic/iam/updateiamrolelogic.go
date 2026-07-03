@@ -28,7 +28,11 @@ func NewUpdateIAMRoleLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upd
 }
 
 func (l *UpdateIAMRoleLogic) UpdateIAMRole(req *types.UpdateIAMRoleReq) (resp *types.UpdateIAMRoleReply, err error) {
-	// todo: add your logic here and delete this line
-
-	return
+	if req.Id == 0 {
+		return nil, errInvalid("id 不能为空")
+	}
+	if err := l.svcCtx.Rbac.UpdateRoleNameByID(req.Id, req.RoleName); err != nil {
+		return nil, errInvalid(err.Error())
+	}
+	return &types.UpdateIAMRoleReply{}, nil
 }

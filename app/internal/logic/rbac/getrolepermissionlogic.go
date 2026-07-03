@@ -5,6 +5,7 @@ package rbac
 
 import (
 	"context"
+	"strings"
 
 	"github.com/solikewind/happyeat/app/internal/svc"
 	"github.com/solikewind/happyeat/app/internal/types"
@@ -28,7 +29,18 @@ func NewGetRolePermissionLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *GetRolePermissionLogic) GetRolePermission(req *types.GetRolePermissionReq) (resp *types.GetRolePermissionReply, err error) {
-	// todo: add your logic here and delete this line
-
-	return
+	role := strings.TrimSpace(req.Role)
+	if role == "" {
+		return nil, errInvalid("role 不能为空")
+	}
+	permissions, err := l.svcCtx.Rbac.GetRolePermissions(role)
+	if err != nil {
+		return nil, errInvalid(err.Error())
+	}
+	return &types.GetRolePermissionReply{
+		RolePermission: types.RolePermission{
+			Role:        role,
+			Permissions: permissions,
+		},
+	}, nil
 }

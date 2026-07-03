@@ -80,12 +80,17 @@ func toUserItem(ctx context.Context, svcCtx *svc.ServiceContext, row *svc.IAMUse
 	if roles == nil {
 		roles = []string{}
 	}
+	roleNames := row.RoleNames
+	if roleNames == nil {
+		roleNames = []string{}
+	}
 	return types.IAMUserItem{
 		Id:             row.ID,
 		UserCode:       row.UserCode,
 		DisplayName:    row.DisplayName,
 		Phone:          row.Phone,
 		Roles:          roles,
+		RoleNames:      roleNames,
 		AvatarObjectId: row.AvatarObjectID,
 		AvatarUrl:      resolveAvatarURL(ctx, svcCtx, row.AvatarObjectID, row.AvatarURL),
 		HasPassword:    row.HasPassword,

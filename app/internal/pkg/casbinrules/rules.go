@@ -183,6 +183,34 @@ var PresetRoleCodes = map[string]struct{}{
 	"waiter":      {},
 }
 
+// UnknownRoleCode 前端/鉴权兜底用的虚拟角色码，不应作为可分配 IAM 角色删除。
+const UnknownRoleCode = "unknown"
+
+// IsProtectedRole 系统保护角色（预置 + unknown），不可删除。
+func IsProtectedRole(roleCode string) bool {
+	if IsPresetRole(roleCode) {
+		return true
+	}
+	return roleCode == UnknownRoleCode
+}
+
+// PresetRoleNames 预置角色的中文展示名（role_code 保持英文不变）。
+var PresetRoleNames = map[string]string{
+	"super_admin": "超级管理员",
+	"manager":     "店长",
+	"cashier":     "收银",
+	"kitchen":     "后厨",
+	"waiter":      "服务员",
+}
+
+// PresetRoleDisplayName 返回预置角色中文名；非预置或未知时回退 role_code。
+func PresetRoleDisplayName(roleCode string) string {
+	if name, ok := PresetRoleNames[roleCode]; ok && name != "" {
+		return name
+	}
+	return roleCode
+}
+
 // IsPresetRole 是否为系统预置角色。
 func IsPresetRole(roleCode string) bool {
 	_, ok := PresetRoleCodes[roleCode]

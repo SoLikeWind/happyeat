@@ -41,7 +41,18 @@ func NewRbacStore(client *ent.Client) (*RbacStore, error) {
 func (s *RbacStore) List() (map[string][]string, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return s.iam.RolePermissionsMap(context.Background())
+	raw, err := s.iam.RolePermissionsMap(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string][]string, len(raw))
+	for role, perms := range raw {
+		if role == casbinrules.UnknownRoleCode {
+			continue
+		}
+		out[role] = perms
+	}
+	return out, nil
 }
 
 func (s *RbacStore) UpdateRole(roleCode string, permissions []string) error {
@@ -95,7 +106,19 @@ func (s *RbacStore) AssignUserRole(userCode, roleCode string) error {
 	if hasRole {
 		return nil
 	}
-	return s.iam.AddUserRole(ctx, userCode, roleCode)
+	if err := s.iam.AddUserRole(ctx, userCode, roleCode); err != nil {
+		return err
+	}
+	// 分配有效角色时，自动解除 unknown 兜底绑定（历史数据兼容）。
+	if roleCode != casbinrules.UnknownRoleCode {
+		_ = s.iam.RemoveUserRoleIfExists(ctx, userCode, casbinrules.UnknownRoleCode)
+	}
+	return nil
+}
+
+// StripUnknownRole 解除用户的 unknown 兜底绑定（IAM 层）。
+func (s *RbacStore) StripUnknownRole(userCode string) error {
+	return s.iam.RemoveUserRoleIfExists(context.Background(), userCode, casbinrules.UnknownRoleCode)
 }
 
 // RemoveUserRole 解除用户与角色的关联；用户不存在返回错误，未绑定则幂等成功。
@@ -226,6 +249,9 @@ func (s *RbacStore) CreateRole(roleCode, roleName string) (uint64, error) {
 	if !roleCodePattern.MatchString(roleCode) {
 		return 0, errors.New("role_code 须为小写字母、数字、下划线，且以字母开头，长度 2~32")
 	}
+	if casbinrules.IsProtectedRole(roleCode) {
+		return 0, errors.New("该角色编码为系统保留，不可创建")
+	}
 	if roleName == "" {
 		roleName = roleCode
 	}
@@ -260,32 +286,79 @@ func (s *RbacStore) GetRolePermissions(roleCode string) ([]string, error) {
 	return permissions, nil
 }
 
-// DeleteRoleByID 软删角色；预置角色不可删。
-func (s *RbacStore) DeleteRoleByID(id uint64) error {
+// DeleteRoleOutcome 删除角色后用于增量同步 Casbin。
+type DeleteRoleOutcome struct {
+	RoleCode    string
+	UserCodes   []string
+	Permissions []string
+}
+
+// DeleteRoleByID 软删角色；预置/unknown 不可删；若有用户仅绑定此角色则拒绝删除。
+func (s *RbacStore) DeleteRoleByID(id uint64) (*DeleteRoleOutcome, error) {
 	ctx := context.Background()
 	row, err := s.iam.GetRoleByID(ctx, id)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return errors.New("角色不存在")
+			return nil, errors.New("角色不存在")
 		}
-		return err
+		return nil, err
 	}
-	if casbinrules.IsPresetRole(row.RoleCode) {
-		return errors.New("系统预置角色不可删除")
+	if casbinrules.IsProtectedRole(row.RoleCode) {
+		return nil, errors.New("系统角色不可删除")
 	}
-	return s.iam.DeleteRoleByID(ctx, id)
+	userCodes, err := s.iam.UsersWithRole(ctx, row.RoleCode)
+	if err != nil {
+		return nil, err
+	}
+	for _, userCode := range userCodes {
+		n, err := s.iam.CountUserRoles(ctx, userCode)
+		if err != nil {
+			return nil, err
+		}
+		if n <= 1 {
+			return nil, errors.New("仍有用户仅绑定此角色（" + userCode + "），请先为其分配其它角色后再删除")
+		}
+	}
+	permissions, err := s.GetRolePermissions(row.RoleCode)
+	if err != nil {
+		return nil, err
+	}
+	for _, userCode := range userCodes {
+		if err := s.RemoveUserRole(userCode, row.RoleCode); err != nil {
+			return nil, err
+		}
+	}
+	if err := s.iam.DeleteRoleByID(ctx, id); err != nil {
+		return nil, err
+	}
+	return &DeleteRoleOutcome{
+		RoleCode:    row.RoleCode,
+		UserCodes:   userCodes,
+		Permissions: permissions,
+	}, nil
 }
 
-// IAMUserListItem 分页列出用户及其角色 code。
+// IAMUserListItem 分页列出用户及其角色 code / 展示名。
 type IAMUserListItem struct {
 	ID             uint64
 	UserCode       string
 	Phone          string
 	DisplayName    string
 	Roles          []string
+	RoleNames      []string
 	AvatarObjectID uint64
 	AvatarURL      string
 	HasPassword    bool
+}
+
+// resolveRoleDisplayName 优先用库内 role_name，否则回退预置中文名。
+func resolveRoleDisplayName(roleCode, roleName string) string {
+	code := strings.TrimSpace(roleCode)
+	name := strings.TrimSpace(roleName)
+	if name != "" && !strings.EqualFold(name, code) {
+		return name
+	}
+	return casbinrules.PresetRoleDisplayName(code)
 }
 
 // GetUserRoleCodes 返回用户已绑定的角色编码（升序）。
@@ -362,6 +435,7 @@ type LoginUser struct {
 	Phone       string
 	AvatarURL   string
 	Roles       []string
+	RoleNames   []string
 }
 
 // AuthenticateByPhone 用手机号 + 密码校验登录；成功返回主体与角色。
@@ -404,8 +478,10 @@ func finishAuth(row *ent.IAMUser, password string) (*LoginUser, error) {
 		return nil, errors.New("用户名或密码错误")
 	}
 	roles := make([]string, 0, len(row.Edges.Roles))
+	roleNames := make([]string, 0, len(row.Edges.Roles))
 	for _, r := range row.Edges.Roles {
 		roles = append(roles, r.RoleCode)
+		roleNames = append(roleNames, resolveRoleDisplayName(r.RoleCode, r.RoleName))
 	}
 	if len(roles) == 0 {
 		return nil, errors.New("该用户未分配角色，请联系管理员")
@@ -416,6 +492,7 @@ func finishAuth(row *ent.IAMUser, password string) (*LoginUser, error) {
 		Phone:       row.Phone,
 		AvatarURL:   row.AvatarURL,
 		Roles:       roles,
+		RoleNames:   roleNames,
 	}, nil
 }
 
@@ -536,8 +613,10 @@ func (s *RbacStore) GetUserDetailByID(id uint64) (*IAMUserListItem, error) {
 
 func entUserToListItem(row *ent.IAMUser) *IAMUserListItem {
 	roleCodes := make([]string, 0, len(row.Edges.Roles))
+	roleNames := make([]string, 0, len(row.Edges.Roles))
 	for _, r := range row.Edges.Roles {
 		roleCodes = append(roleCodes, r.RoleCode)
+		roleNames = append(roleNames, resolveRoleDisplayName(r.RoleCode, r.RoleName))
 	}
 	return &IAMUserListItem{
 		ID:             row.ID,
@@ -545,6 +624,7 @@ func entUserToListItem(row *ent.IAMUser) *IAMUserListItem {
 		Phone:          row.Phone,
 		DisplayName:    row.DisplayName,
 		Roles:          roleCodes,
+		RoleNames:      roleNames,
 		AvatarObjectID: row.AvatarObjectID,
 		AvatarURL:      row.AvatarURL,
 		HasPassword:    row.PasswordHash != "",
@@ -557,6 +637,49 @@ func hashPassword(password string) (string, error) {
 		return "", err
 	}
 	return string(b), nil
+}
+
+// PickPrimaryRole 从用户绑定的多个角色中选取 JWT/前端主角色（优先超管等业务角色，跳过 unknown）。
+func PickPrimaryRole(roles []string) string {
+	if len(roles) == 0 {
+		return casbinrules.UnknownRoleCode
+	}
+	priority := []string{"super_admin", "manager", "cashier", "kitchen", "waiter"}
+	set := make(map[string]struct{}, len(roles))
+	for _, r := range roles {
+		set[r] = struct{}{}
+	}
+	for _, code := range priority {
+		if _, ok := set[code]; ok {
+			return code
+		}
+	}
+	for _, r := range roles {
+		if r != casbinrules.UnknownRoleCode {
+			return r
+		}
+	}
+	return roles[0]
+}
+
+func (s *RbacStore) purgeLegacyUnknownBindings(ctx context.Context) error {
+	row, err := s.iam.GetRoleByCode(ctx, casbinrules.UnknownRoleCode)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	userCodes, err := s.iam.UsersWithRole(ctx, casbinrules.UnknownRoleCode)
+	if err != nil {
+		return err
+	}
+	for _, userCode := range userCodes {
+		if err := s.iam.RemoveUserRoleIfExists(ctx, userCode, casbinrules.UnknownRoleCode); err != nil {
+			return err
+		}
+	}
+	return s.iam.DeleteRoleByID(ctx, row.ID)
 }
 
 // DeleteUserByID 软删用户并清除角色关联。
@@ -614,18 +737,11 @@ func (s *RbacStore) bootstrap(ctx context.Context) error {
 
 func (s *RbacStore) seedRolesAndPermissions(ctx context.Context) error {
 	defaults := defaultRolePermissions()
-	presetNames := map[string]string{
-		"super_admin": "超级管理员",
-		"manager":     "店长",
-		"cashier":     "收银",
-		"kitchen":     "后厨",
-		"waiter":      "服务员",
-	}
 	for roleCode := range defaults {
-		name := presetNames[roleCode]
-		if name == "" {
-			name = roleCode
+		if roleCode == casbinrules.UnknownRoleCode {
+			continue // 仅前端兜底，不写入 IAM
 		}
+		name := casbinrules.PresetRoleDisplayName(roleCode)
 		if err := s.iam.EnsureRole(ctx, roleCode, name); err != nil {
 			return err
 		}
@@ -670,7 +786,7 @@ func (s *RbacStore) seedDefaultMappings() error {
 			return err
 		}
 	}
-	return nil
+	return s.purgeLegacyUnknownBindings(ctx)
 }
 
 // ensureDevAdmin 确保开发态超管账号存在且已设密码。
@@ -749,6 +865,5 @@ func defaultRolePermissions() map[string][]string {
 		"cashier":     {"home:view", "orders:view", "orders:create", "orders:print_kitchen", "order_desk:view", "order_desk:create", "stats:view", "spec:view", "settlements:view", "settlements:edit", "settlements:settle"},
 		"kitchen":     {"home:view", "workbench:view", "workbench:complete", "orders:view", "orders:print_kitchen", "spec:view"},
 		"waiter":      {"home:view", "orders:view", "orders:print_kitchen", "order_desk:view", "order_desk:create", "table:view", "spec:view"},
-		"unknown":     {},
 	}
 }

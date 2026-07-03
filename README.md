@@ -85,6 +85,7 @@ make migrate
 
 - 实施计划：`docs/implementation-plan.md`
 - 厨房打印单格式设计：`docs/厨房打印单格式设计.md`
+- RBAC / IAM / Casbin 运维与已知问题：`docs/RBAC-IAM-Casbin.md`
 - API 说明：`app/api/README.md`
 
 ## 架构说明

@@ -403,6 +403,7 @@ type IAMUserItem struct {
 	DisplayName    string   `json:"display_name"`
 	Phone          string   `json:"phone"`
 	Roles          []string `json:"roles"`
+	RoleNames      []string `json:"role_names"`
 	AvatarObjectId uint64   `json:"avatar_object_id,string"`
 	AvatarUrl      string   `json:"avatar_url"`
 	HasPassword    bool     `json:"has_password"`
@@ -599,6 +600,7 @@ type LoginReply struct {
 	UserCode    string   `json:"user_code"`
 	Role        string   `json:"role"`  // 前端菜单/按钮权限主角色
 	Roles       []string `json:"roles"` // IAM 绑定的全部角色
+	RoleNames   []string `json:"role_names"`
 }
 
 type LoginReq struct {

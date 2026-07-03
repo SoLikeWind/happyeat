@@ -7,6 +7,7 @@ import (
 	"context"
 	"sort"
 
+	"github.com/solikewind/happyeat/app/internal/pkg/casbinrules"
 	"github.com/solikewind/happyeat/app/internal/svc"
 	"github.com/solikewind/happyeat/app/internal/types"
 
@@ -41,6 +42,9 @@ func (l *ListRolePermissionLogic) ListRolePermission() (resp *types.ListRolePerm
 
 	result := make([]types.RolePermission, 0, len(roles))
 	for _, role := range roles {
+		if role == casbinrules.UnknownRoleCode {
+			continue
+		}
 		result = append(result, types.RolePermission{
 			Role:        role,
 			Permissions: roleMap[role],

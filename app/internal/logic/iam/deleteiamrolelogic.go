@@ -31,10 +31,11 @@ func (l *DeleteIAMRoleLogic) DeleteIAMRole(req *types.DeleteIAMRoleReq) (resp *t
 	if req.Id == 0 {
 		return nil, errInvalid("id 不能为空")
 	}
-	if err := l.svcCtx.Rbac.DeleteRoleByID(req.Id); err != nil {
+	outcome, err := l.svcCtx.Rbac.DeleteRoleByID(req.Id)
+	if err != nil {
 		return nil, errInvalid(err.Error())
 	}
-	if err := svc.SyncRolePoliciesToCasbin(l.svcCtx.Rbac, l.svcCtx.Casbin); err != nil {
+	if err := svc.RemoveRolePoliciesFromCasbin(l.svcCtx.Casbin, outcome.RoleCode, outcome.UserCodes, outcome.Permissions); err != nil {
 		return nil, errInvalid("同步 Casbin 策略失败")
 	}
 	return &types.DeleteIAMRoleReply{}, nil

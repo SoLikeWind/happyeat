@@ -41,6 +41,26 @@ func ToPinyin(text string) string {
 	return strings.ToLower(result.String())
 }
 
+// ToPinyinInitials 提取中文的拼音首字母（非中文字符原样保留，统一小写）
+// 例如："宫保鸡丁" -> "gbjd"，"Q弹鱼丸" -> "qdyw"
+func ToPinyinInitials(text string) string {
+	if text == "" {
+		return ""
+	}
+	var result strings.Builder
+	for _, r := range text {
+		if unicode.Is(unicode.Han, r) {
+			py := pinyin.SinglePinyin(r, pinyinArgs)
+			if len(py) > 0 && py[0] != "" {
+				result.WriteByte(py[0][0])
+			}
+		} else {
+			result.WriteRune(r)
+		}
+	}
+	return strings.ToLower(result.String())
+}
+
 // HasChinese 判断字符串是否包含中文字符
 func HasChinese(text string) bool {
 	for _, r := range text {
@@ -75,9 +95,14 @@ func MatchPinyin(name, keyword string) bool {
 			return true
 		}
 	} else {
-		// 3. 如果关键词是纯拼音，将菜单名称转为拼音后匹配
+		// 3. 如果关键词是纯拼音，将菜单名称转为全拼后匹配
 		namePinyin := ToPinyin(name)
 		if strings.Contains(namePinyin, keyword) {
+			return true
+		}
+		// 4. 拼音首字母匹配，如 "宫保鸡丁"->"gbjd"，关键词 "jd"/"gbjd" 均可命中
+		nameInitials := ToPinyinInitials(name)
+		if strings.Contains(nameInitials, keyword) {
 			return true
 		}
 	}
